@@ -1,0 +1,10 @@
+import re
+
+class Token:
+    __SLOTS__ = ('type', 'value')
+    def __init__(self, type_, value):
+        self.type = type_
+        self.value = value
+    def __repr__(self):
+        return f"Token({self.type}, {self.value})"
+
