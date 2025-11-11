@@ -87,36 +87,9 @@ class Tokenizer:
         return tokens
 
 
-code = """class Ball [radius:int, x:int, y:int, speed:float]:
-  getRadius() -> int:
-    return self.radius;
-  end
 
-  setRadius(r:int):
-    set self.radius to r;
-  end 
-end
 
-fn main() -> void:
-  create int b;
-  set b to 5;
-  print(b);
 
-  create Ball ball = Ball(5, 10, 3, 3.14);
-  ball.setRadius(6);
-  print(ball.getRadius());
-  if(ball.radius =? 6){
-    print(6);
-  }
-
-  
-end
-"""
-
-tokenizer = Tokenizer()
-tokens = tokenizer.tokenize(code)
-for token in tokens:
-    print(token)
 
 
 
