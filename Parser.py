@@ -7,22 +7,25 @@ class Parser:
         self.programm = []
 
     def pop(self):
-        token = self.tokens[self.pos]
+        self.token = self.tokens[self.pos]
         self.pos += 1
-        return token
+        #return token
 
     def parse(self):
-        token = self.pop()
-        assert token.type == "CLASS"
-        class_name = self.pop()
+        self.pop()
+        assert self.token.type == "CLASS"
+        self.pop()
+        class_name = self.token
         assert class_name.type == "IDENT"
         self.programm.append(("CLASS_DEF", class_name.value))
-        token = self.pop()
+        self.pop()
+        token = self.token
         if token.type == "COLON":
             self.programm.append(("BODY", self.parse_body()))
         elif token.type == "LBRK":
             self.programm.append(("FIELDS", self.parse_fields()))
-            token = self.pop()
+            self.pop()
+            token = self.token
             #assert token.type == "COLON"
             self.programm.append(("BODY", self.parse_body()))
         #assert token.type == "END"
@@ -31,7 +34,7 @@ class Parser:
     def parse_body(self):
         body = []
         while True:
-            self.token = self.pop()
+            self.pop()
             if self.token.type == "END":
                 break
             if self.token.type == "CREATE":
@@ -47,8 +50,9 @@ class Parser:
             if self.token.type == "IDENT":
                 print("Parsing IDENT in body... " , self.token)
                 body.append(self.parse_ident())
+                print("body so far:", body)
                 print(self.programm)
-                return 
+                return
             if self.token.type == "CLASS":
                 raise NotImplementedError("Nested classes are not supported yet")
         return body
@@ -56,20 +60,22 @@ class Parser:
     def parse_fields(self):
         fields = []
         while True:
-            field_name = self.pop()
-            assert field_name.type == "IDENT"
-            colon = self.pop()
-            assert colon.type == "COLON"
-            field_type = self.pop()
-            assert field_type.type.startswith("TYPE_")
-            fields.append((field_name.value, field_type.value))
-            token = self.pop()
-            if token.type == "COMMA":
+            self.pop()
+            assert self.token.type == "IDENT"
+            field_name = self.token.value
+            self.pop()
+            assert self.token.type == "COLON"
+            self.pop()
+            assert self.token.type.startswith("TYPE_")
+            fields.append((field_name, self.token.value))
+            self.pop()
+
+            if self.token.type == "COMMA":
                 continue
-            elif token.type == "RBRK":
+            elif self.token.type == "RBRK":
                 break
             else:
-                raise ValueError(f"Unexpected token {token}")
+                raise ValueError(f"Unexpected token {self.token}")
         return fields
 
     def parse_create_stmt(self):
@@ -88,37 +94,46 @@ class Parser:
         pass
 
     def parse_ident(self):
-        print("Parsing ident...")
-        #ident_name = self.pop()
-        print("Ident name:", self.token.value)
-        self.token = self.pop()
+
+        name = self.token.value
+        print("Parsing IDENT:", name)
+        self.pop()
         if self.token.type == "DOT":
-            method_name = self.pop()
+            self.pop()
+            method_name = self.token
             assert method_name.type == "IDENT"
-            lp = self.pop()
-            print(self.programm)
-            assert lp.type == "LP"
+            self.pop()
+            #print(self.programm)
+            assert self.token.type == "LP"
             args = self.parse_args()
-            rp = self.pop()
-            assert rp.type == "RP"
-            semi = self.pop()
-            assert semi.type == "SEMI"
-            return ("METHOD_CALL", self.token.value, method_name.value, args)
+            self.pop()
+            assert self.token.type == "RP"
+            self.pop()
+            assert self.token.type == "SEMI"
+            return ("METHOD_CALL", self.token.value, f"{name}.{method_name.value}", args)
         elif self.token.type == "LP":
+            print("Parsing function/method call or definition for:", name)
             buffer = []
-            while self.token.type != "RP":
-                self.token = self.pop()
+            while True:
+                self.pop()
+                print("Current token in IDENT parsing:", self.token)
+                if self.token.type in ["SEMI", "ARROW"]:
+                    break
                 buffer.append(self.token)
-            self.token = self.pop()
+                print("Buffer so far:", buffer)
+            buffer.pop(0)  # remove RP
+
             if self.token.type == "SEMI":
                 return ("FN_CALL", self.token.value, buffer)
             elif self.token.type == "ARROW":
-                return_type = self.pop()
+                self.pop()
+                return_type = self.token
+                #print("Return type token:", return_type)
                 assert return_type.type.startswith("TYPE_")
-                colon = self.pop()
-                assert colon.type == "COLON"
+                self.pop()
+                assert self.token.type == "COLON"
                 body = self.parse_method_body()
-                return ("METHOD_DEF", self.token.value, buffer, return_type.value, body)
+                return ("METHOD_DEF", name , buffer, return_type.value, body)
                 
         
     def parse_args(self):
