@@ -140,7 +140,33 @@ class Parser:
         pass
 
     def parse_method_body(self):
+        body = []
+        while True:
+            self.pop()
+
+            if self.token.type == "END":
+                break
+            if self.token.type == "CREATE":
+                body.append(("CREATE_STMT", self.parse_create_stmt()))
+            if self.token.type == "SET":
+                body.append(("SET_STMT", self.parse_set_stmt()))
+            if self.token.type == "PRINT":
+                body.append(("PRINT_STMT", self.parse_print_stmt()))
+            if self.token.type == "IF":
+                body.append(("IF_STMT", self.parse_if_stmt()))
+            if self.token.type == "IDENT":
+                body.append(self.parse_ident())
+            if self.token.type == "RETURN":
+                body.append(("RETURN_STMT", self.parse_return_stmt()))
+                return body
+            if self.token.type == "CLASS":
+                raise NotImplementedError("Nested classes are not supported yet")
+        return body
+
+    def parse_return_stmt(self):
         pass
+
+
 
 
 
