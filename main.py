@@ -4,7 +4,7 @@ import Parser
 
 code = """class Ball [radius:int, x:int, y:int, speed:float]:
   getRadius() -> int, int:
-    return self.radius, self.x(y);
+    return self.radius, self.x(y), someOtherThing();
   end
 
   setRadius(r:int):

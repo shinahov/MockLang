@@ -131,16 +131,23 @@ class Parser:
                 self.pop()
                 return_type = self.parse_return_type()
                 print("Return type token:", return_type)
-                # assert return_type[-1].type.startswith("TYPE_")
-                # self.pop()
-                # print("Current token before COLON check:", self.token)
                 assert self.token.type == "COLON"
                 self.pop()
                 body = self.parse_method_body()
                 return ("METHOD_DEF", name, buffer, return_type, body)
 
     def parse_args(self):
-        pass
+        args = []
+        while True:
+            print("Parsing argument, current token:", self.token)
+            if self.token.type == "RP":
+                break
+            if self.token.type == "COMMA":
+                continue
+            args.append(self.token) # later parse expression
+            self.pop()
+        return args
+
 
     def parse_method_body(self):
         body = []
@@ -198,10 +205,18 @@ class Parser:
                         args = self.parse_args()
                         self.pop()  # skipp ')'
                         chain.extend([Token("CLASS_METHOD_CALL",
-                                            [Token("CLASS", token.value), name, Token("ARGS", args)])])
+                                            [Token("CLASS", token.value),
+                                             name,
+                                             Token("ARGS", args)])])
+                        print("Parsed CLASS_METHOD_CALL:", chain)
                     else:
                         chain.extend([Token("ClASS", token.value), name])
-                    #self.pop()
+                elif self.token.type == "LP":
+                    self.pop()  # skipp '('
+                    args = self.parse_args()
+                    self.pop()  # skipp ')'
+                    chain.append(Token("FN_CALL", [token, Token("ARGS", args)]))
+
                 cur.extend(chain)
                 continue
 
@@ -212,7 +227,8 @@ class Parser:
         # ;
         if cur:
             exprs.append(cur)
-        self.pop()  # ';' konsumieren
+            print("Parsed return expression:", exprs)
+        self.pop()  # ';' consumed
         return exprs
 
     def parse_return_type(self):
