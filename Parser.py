@@ -1,4 +1,6 @@
 from Tokenizer import Tokenizer, Token
+
+
 class Parser:
     def __init__(self, tokens):
         self.token = None
@@ -9,7 +11,7 @@ class Parser:
     def pop(self):
         self.token = self.tokens[self.pos]
         self.pos += 1
-        #return token
+        # return token
 
     def parse(self):
         self.pop()
@@ -26,9 +28,9 @@ class Parser:
             self.programm.append(("FIELDS", self.parse_fields()))
             self.pop()
             token = self.token
-            #assert token.type == "COLON"
+            # assert token.type == "COLON"
             self.programm.append(("BODY", self.parse_body()))
-        #assert token.type == "END"
+        # assert token.type == "END"
         return self.programm
 
     def parse_body(self):
@@ -48,7 +50,7 @@ class Parser:
             if self.token.type == "FN":
                 body.append(("FN_DEF", self.parse_fn_def()))
             if self.token.type == "IDENT":
-                print("Parsing IDENT in body... " , self.token)
+                print("Parsing IDENT in body... ", self.token)
                 body.append(self.parse_ident())
                 print("body so far:", body)
                 print(self.programm)
@@ -103,7 +105,7 @@ class Parser:
             method_name = self.token
             assert method_name.type == "IDENT"
             self.pop()
-            #print(self.programm)
+            # print(self.programm)
             assert self.token.type == "LP"
             args = self.parse_args()
             self.pop()
@@ -127,22 +129,23 @@ class Parser:
                 return ("FN_CALL", self.token.value, buffer)
             elif self.token.type == "ARROW":
                 self.pop()
-                return_type = self.token
-                #print("Return type token:", return_type)
-                assert return_type.type.startswith("TYPE_")
-                self.pop()
+                return_type = self.parse_return_type()
+                print("Return type token:", return_type)
+                # assert return_type[-1].type.startswith("TYPE_")
+                # self.pop()
+                # print("Current token before COLON check:", self.token)
                 assert self.token.type == "COLON"
+                self.pop()
                 body = self.parse_method_body()
-                return ("METHOD_DEF", name , buffer, return_type.value, body)
-                
-        
+                return ("METHOD_DEF", name, buffer, return_type, body)
+
     def parse_args(self):
         pass
 
     def parse_method_body(self):
         body = []
         while True:
-            self.pop()
+            # self.pop()
 
             if self.token.type == "END":
                 break
@@ -157,16 +160,31 @@ class Parser:
             if self.token.type == "IDENT":
                 body.append(self.parse_ident())
             if self.token.type == "RETURN":
+                print("Parsing RETURN statement...")
                 body.append(("RETURN_STMT", self.parse_return_stmt()))
+                print("RETURN parsed:", body)
                 return body
             if self.token.type == "CLASS":
                 raise NotImplementedError("Nested classes are not supported yet")
         return body
 
     def parse_return_stmt(self):
-        pass
+        self.pop()
+        expr = []
+        while True:
+            if self.token.type == "SEMI":
+                break
+            expr.append(self.token)  # later with parse expression
+            self.pop()
+        return expr
 
-
-
-
-
+    def parse_return_type(self):
+        buffer = []
+        while True:
+            # self.pop()
+            if self.token.type == "COLON":
+                if not buffer:
+                    buffer.append(Token("TYPE_VOID", "void"))
+                return buffer
+            buffer.append(self.token)
+            self.pop()
