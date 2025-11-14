@@ -170,13 +170,50 @@ class Parser:
 
     def parse_return_stmt(self):
         self.pop()
-        expr = []
-        while True:
-            if self.token.type == "SEMI":
-                break
-            expr.append(self.token)  # later with parse expression
+        exprs = []
+        cur = []
+
+        while self.token.type != "SEMI":
+            if self.token.type == "COMMA":
+                if not cur:
+                    raise SyntaxError("Empty expression vor ','")
+                exprs.append(cur)
+                cur = []
+                self.pop()  # skipp ','
+                continue
+
+            if self.token.type == "IDENT":
+                token = self.token
+                chain = []
+                self.pop()
+                if self.token.type == "DOT":
+                    #dot = self.token
+                    self.pop() # skipp '.'
+                    if self.token.type != "IDENT":
+                        raise SyntaxError("Nach '.' wird IDENT erwartet")
+                    name = self.token
+                    self.pop()
+                    if self.token.type == "LP":
+                        self.pop()  # skipp '('
+                        args = self.parse_args()
+                        self.pop()  # skipp ')'
+                        chain.extend([Token("CLASS_METHOD_CALL",
+                                            [Token("CLASS", token.value), name, Token("ARGS", args)])])
+                    else:
+                        chain.extend([Token("ClASS", token.value), name])
+                    #self.pop()
+                cur.extend(chain)
+                continue
+
+
+            cur.append(self.token)
             self.pop()
-        return expr
+
+        # ;
+        if cur:
+            exprs.append(cur)
+        self.pop()  # ';' konsumieren
+        return exprs
 
     def parse_return_type(self):
         buffer = []

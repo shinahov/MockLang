@@ -3,8 +3,8 @@ import Tokenizer
 import Parser
 
 code = """class Ball [radius:int, x:int, y:int, speed:float]:
-  getRadius() -> int:
-    return self.radius;
+  getRadius() -> int, int:
+    return self.radius, self.x(y);
   end
 
   setRadius(r:int):
