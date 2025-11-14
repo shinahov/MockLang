@@ -1,6 +1,33 @@
 from Tokenizer import Tokenizer, Token
 
 
+def pretty_print(obj, indent=0):
+    space = "    " * indent  # 4 spaces per indent level
+
+    if isinstance(obj, list):
+        print(space + "[")
+        for item in obj:
+            pretty_print(item, indent + 1)
+        print(space + "]")
+
+    elif isinstance(obj, tuple):
+        print(space + "(")
+        for item in obj:
+            pretty_print(item, indent + 1)
+        print(space + ")")
+
+    elif hasattr(obj, "type") and hasattr(obj, "value"):  # Token
+        if isinstance(obj.value, list):
+            print(f"{space}Token({obj.type}, [")
+            for val in obj.value:
+                pretty_print(val, indent + 1)
+            print(space + "])")
+        else:
+            print(f"{space}Token({obj.type}, {obj.value})")
+
+    else:
+        print(space + str(obj))
+
 class Parser:
     def __init__(self, tokens):
         self.token = None
@@ -227,7 +254,7 @@ class Parser:
         # ;
         if cur:
             exprs.append(cur)
-            print("Parsed return expression:", exprs)
+            pretty_print(exprs)
         self.pop()  # ';' consumed
         return exprs
 
