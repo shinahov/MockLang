@@ -1,7 +1,7 @@
 from Tokenizer import Tokenizer, Token
 
 
-def pretty_print(obj, indent=0):
+def pretty_print(obj, indent=0):  # custom print function for debugging
     space = "    " * indent  # 4 spaces per indent level
 
     if isinstance(obj, list):
@@ -67,9 +67,10 @@ class Parser:
             if self.token.type == "END":
                 break
             if self.token.type == "CREATE":
-                body.append(("CREATE_STMT", self.parse_create_stmt()))
+                body.append(Token("CREATE_STMT", self.parse_create_stmt()))
+                print("CREATE_STMT parsed:", body)
             if self.token.type == "SET":
-                body.append(("SET_STMT", self.parse_set_stmt()))
+                body.append(Token("SET_STMT", self.parse_set_stmt()))
             if self.token.type == "PRINT":
                 body.append(("PRINT_STMT", self.parse_print_stmt()))
             if self.token.type == "IF":
@@ -108,10 +109,55 @@ class Parser:
         return fields
 
     def parse_create_stmt(self):
-        pass
+        buffer = []
+        if self.token.type != "CREATE":
+            raise SyntaxError("CREATE_STMT must start with CREATE")
+        self.pop()
+
+        while True:
+            print("Parsing CREATE_STMT, current token:", self.token)
+            if self.token.type == "SEMI":
+                break
+            if (self.token.type.startswith("TYPE_") or
+                    self.token.type == "IDENT"):
+                buffer.append(Token("TYPE", self.token.value))
+                self.pop()
+                if self.token.type == "IDENT":
+                    buffer.append(Token("IDENT", self.token.value))
+                    self.pop()
+                    if self.token.type == "EQ":
+                        buffer.append(Token("EQ", self.token.value))
+                        self.pop()
+                        if self.token.type == "IDENT":
+                            buffer.append(Token("IDENT", self.token.value))
+                            self.pop()
+                            if self.token.type == "LP":
+                                self.pop()
+                                args = self.parse_args()
+                                buffer.append(Token("ARGS", args))
+                                self.pop()
+                                assert self.token.type == "RP"
+                                self.pop()
+                                return buffer
+                    elif self.token.type == "SEMI":
+                        return buffer
+
+
 
     def parse_set_stmt(self):
-        pass
+        buffer = []
+        if self.token.type != "SET":
+            raise SyntaxError("SET_STMT must start with SET")
+        self.pop()
+
+        while True:
+            print("Parsing SET_STMT, current token:", self.token)
+            if self.token.type == "SEMI":
+                break
+            buffer.append(self.token)
+            self.pop()
+        return buffer
+
 
     def parse_print_stmt(self):
         pass
