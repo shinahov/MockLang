@@ -71,6 +71,8 @@ class Parser:
                 print("CREATE_STMT parsed:", body)
             if self.token.type == "SET":
                 body.append(Token("SET_STMT", self.parse_set_stmt()))
+                print("SET_STMT parsed:", pretty_print(body))
+                return
             if self.token.type == "PRINT":
                 body.append(("PRINT_STMT", self.parse_print_stmt()))
             if self.token.type == "IF":
@@ -154,7 +156,11 @@ class Parser:
             print("Parsing SET_STMT, current token:", self.token)
             if self.token.type == "SEMI":
                 break
-            buffer.append(self.token)
+            if self.token.type == "TO":
+                self.pop()
+                buffer.append(Token("TO", self.parse_expression()))
+                self.pop()
+                continue
             self.pop()
         return buffer
 
@@ -314,3 +320,13 @@ class Parser:
                 return buffer
             buffer.append(self.token)
             self.pop()
+
+    def parse_expression(self):
+        buffer = []
+        while True:
+            print("Parsing expression, current token:", self.token)
+            if self.token.type in ["SEMI"]:
+                break
+            buffer.append(self.token)
+            self.pop()
+        return buffer
