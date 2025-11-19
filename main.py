@@ -6,6 +6,7 @@ code = """class Ball [radius:int, x:int, y:int, speed:float]:
   create int z;
   set z to 10;
   create float pi = 3.14;
+  print(pi);
   getRadius() -> int, int:
     return self.radius, self.x(y), someOtherThing();
   end

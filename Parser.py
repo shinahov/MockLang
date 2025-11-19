@@ -72,7 +72,8 @@ class Parser:
             if self.token.type == "SET":
                 body.append(Token("SET_STMT", self.parse_set_stmt()))
                 print("SET_STMT parsed:", pretty_print(body))
-                return
+                print("last token vor create", self.token)
+                #return
             if self.token.type == "PRINT":
                 body.append(("PRINT_STMT", self.parse_print_stmt()))
             if self.token.type == "IF":
@@ -80,6 +81,8 @@ class Parser:
             if self.token.type == "FN":
                 body.append(("FN_DEF", self.parse_fn_def()))
             if self.token.type == "IDENT":
+                print(pretty_print(body))
+                return
                 print("Parsing IDENT in body... ", self.token)
                 body.append(self.parse_ident())
                 print("body so far:", body)
@@ -162,11 +165,16 @@ class Parser:
                 self.pop()
                 continue
             self.pop()
+
         return buffer
 
 
     def parse_print_stmt(self):
-        pass
+        self.pop() # consume PRINT
+        self.pop()  # consume LP
+        expr = self.parse_expression()
+        self.pop()  # consume SEMI
+        return expr
 
     def parse_if_stmt(self):
         pass
