@@ -7,6 +7,11 @@ code = """class Ball [radius:int, x:int, y:int, speed:float]:
   set z to 10;
   create float pi = 3.14;
   print(pi);
+  if(z > 5){
+    print(z);
+  } else {
+    print(0);
+  }
   getRadius() -> int, int:
     return self.radius, self.x(y), someOtherThing();
   end

@@ -177,7 +177,25 @@ class Parser:
         return expr
 
     def parse_if_stmt(self):
-        pass
+        self.pop()  # consume IF
+        self.pop()  # consume LP
+        condition = self.parse_condition()
+        self.pop()  # consume RP
+        if self.token.type != "LBRACE":
+            raise SyntaxError("Expected '{' after IF condition")
+        self.pop()  # consume LBRACE
+        body = self.parse_if_else_body()
+        self.pop()  # consume RBRACE
+        if self.token.type == "ELSE":
+            self.pop()  # consume ELSE
+            if self.token.type != "LBRACE":
+                raise SyntaxError("Expected '{' after ELSE")
+            self.pop()  # consume LBRACE
+            else_body = self.parse_if_else_body()
+            self.pop()  # consume RBRACE
+            return (Token("IF_ELSE_STMT", [condition, body, else_body]))
+        return (Token("IF_STMT", [condition, body]))
+
 
     def parse_fn_def(self):
         pass
@@ -338,3 +356,9 @@ class Parser:
             buffer.append(self.token)
             self.pop()
         return buffer
+
+    def parse_condition(self):
+        pass
+
+    def parse_if_else_body(self):
+        pass
