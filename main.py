@@ -54,9 +54,11 @@ class Compiler:
 
 def let_test():
     tokens = Tokenizer.Tokenizer().tokenize(code)
+    #print("Tokens:", tokens)
     parser = Parser.Parser(tokens)
     programm = parser.parse()
-    print("Programm:", programm)
+    print("Programm:")
+    Parser.pretty_print(programm)
 
 
 if __name__ == "__main__":
