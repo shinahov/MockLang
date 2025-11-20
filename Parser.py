@@ -180,7 +180,6 @@ class Parser:
         self.pop()  # consume IF
         self.pop()  # consume LP
         condition = self.parse_condition()
-        self.pop()  # consume RP
         if self.token.type != "LBRACE":
             raise SyntaxError("Expected '{' after IF condition")
         self.pop()  # consume LBRACE
@@ -358,7 +357,44 @@ class Parser:
         return buffer
 
     def parse_condition(self):
-        pass
+        left = []
+        right = []
+        buffer = []
+        comparator = None
+        while True:
+            print("Parsing condition, current token:", self.token)
+            if self.token.type == "LBRACE":
+                return Token("CONDITION", [Token("LEFT", left), comparator, Token("RIGHT", right)])
+            if self.token.type in Tokenizer.comperators:
+                comparator = self.token
+                self.pop()
+                continue
+            if comparator is None:
+                left.append(self.token)
+            else:
+                right.append(self.token)
+            self.pop()
+
+
+        return buffer
 
     def parse_if_else_body(self):
-        pass
+        body = []
+        while True:
+            self.pop()
+            if self.token.type == "RBRACE":
+                break
+            if self.token.type == "CREATE":
+                body.append(("CREATE_STMT", self.parse_create_stmt()))
+            if self.token.type == "SET":
+                body.append(("SET_STMT", self.parse_set_stmt()))
+            if self.token.type == "PRINT":
+                body.append(("PRINT_STMT", self.parse_print_stmt()))
+            if self.token.type == "IF":
+                body.append(("IF_STMT", self.parse_if_stmt()))
+            if self.token.type == "IDENT":
+                body.append(self.parse_ident())
+            if self.token.type == "CLASS":
+                raise NotImplementedError("Nested classes are not supported yet")
+        return body
+

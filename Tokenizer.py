@@ -31,6 +31,7 @@ class Tokenizer:
            "=?": "EQUALSQ",
            "<=": "LE",
            ">=": "GE",
+           "!=": "NE"
            }
 
     ONE = {
@@ -39,6 +40,8 @@ class Tokenizer:
         "(": "LP", ")": "RP", ",": "COMMA", ";": "SEMI",
         ":": "COLON", ".": "DOT", "[": "LBRK", "]": "RBRK", "{": "LBRACE", "}": "RBRACE",
     }
+
+    comperators = {"EQ", "EQUALSQ", "LT", "GT", "LE", "GE", "NE"}
 
     def tokenize(self, code):
         tokens = []
