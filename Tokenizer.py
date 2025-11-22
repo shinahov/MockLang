@@ -42,6 +42,7 @@ class Tokenizer:
     }
 
     comperators = {"EQ", "EQUALSQ", "LT", "GT", "LE", "GE", "NE"}
+    operators = {"PLUS", "MINUS", "STAR", "SLASH"}
 
     def tokenize(self, code):
         tokens = []

@@ -63,16 +63,16 @@ class Parser:
     def parse_body(self):
         body = []
         while True:
-            print("Parsing BODY, current token:", self.token)
-            print("Current body:", body)
+            #print("Parsing BODY, current token:", self.token)
+            #print("Current body:", body)
             self.pop() # consume ; maybe
-            print("next token in body:", self.token)
+            #print("next token in body:", self.token)
             if self.token.type == "END":
                 break
             if self.token.type == "CREATE":
                 body.append(Token("CREATE_STMT", self.parse_create_stmt()))
-                print("next token aftzer create", self.token)
-                print("CREATE_STMT parsed:", body)
+                #print("next token aftzer create", self.token)
+                #print("CREATE_STMT parsed:", body)
             if self.token.type == "SET":
                 body.append(Token("SET_STMT", self.parse_set_stmt()))
                 print("next token after set", self.token)
@@ -134,7 +134,7 @@ class Parser:
                             buffer.append(Token("IDENT", self.token.value))
                             self.pop()
                         else:
-                            buffer.append(Token("EXPR", self.parse_expression()))
+                            buffer.append(self.parse_expression())
                         return buffer
                     elif self.token.type == "SEMI":
                         return buffer
@@ -175,7 +175,7 @@ class Parser:
         self.pop()  # consume LP
         condition = self.parse_condition()
         if self.token.type != "LBRACE":
-            raise SyntaxError("Expected '{' after IF condition")
+            raise SyntaxError("Expected '{' after IF condition but got " + self.token.type)
         self.pop()  # consume LBRACE
         body = self.parse_if_else_body()
         self.pop()  # consume RBRACE
@@ -255,18 +255,18 @@ class Parser:
             if self.token.type == "END":
                 break
             if self.token.type == "CREATE":
-                body.append(("CREATE_STMT", self.parse_create_stmt()))
+                body.append(Token("CREATE_STMT", self.parse_create_stmt()))
             if self.token.type == "SET":
-                body.append(("SET_STMT", self.parse_set_stmt()))
+                body.append(Token("SET_STMT", self.parse_set_stmt()))
             if self.token.type == "PRINT":
-                body.append(("PRINT_STMT", self.parse_print_stmt()))
+                body.append(Token("PRINT_STMT", self.parse_print_stmt()))
             if self.token.type == "IF":
-                body.append(("IF_STMT", self.parse_if_stmt()))
+                body.append(Token("IF_STMT", self.parse_if_stmt()))
             if self.token.type == "IDENT":
                 body.append(self.parse_ident())
             if self.token.type == "RETURN":
                 #print("Parsing RETURN statement...")
-                body.append(("RETURN_STMT", self.parse_return_stmt()))
+                body.append(Token("RETURN_STMT", self.parse_return_stmt()))
                 #print("RETURN parsed:", body)
                 return body
             if self.token.type == "CLASS":
@@ -343,53 +343,64 @@ class Parser:
     def parse_expression(self):
         buffer = []
         while True:
-            print("Parsing expression, current token:", self.token)
-            if self.token.type in ["SEMI"]:
-                print(" buffer ", buffer)
+            #print("Parsing expression, current token:", self.token)
+            if self.token.type == "SEMI" or self.token.type == "RP":
+                #print(" buffer ", buffer)
                 break
-            buffer.append(self.token)
-            self.pop()
-        return buffer
 
-    def parse_condition(self):
-        left = []
-        right = []
-        buffer = []
-        comparator = None
-        while True:
-            #print("Parsing condition, current token:", self.token)
-            if self.token.type == "LBRACE":
-                # later parse expression for left and right
-                return Token("CONDITION", [Token("LEFT", left), comparator, Token("RIGHT", right)])
+            if self.token.type == "LP":
+                self.pop()  # '('
+                #print("recursing into subexpression")
+                subexpr = Token("TERM", self.parse_expression())# rekursiv
+                buffer.append(subexpr)
+                assert self.token.type == "RP"
+                self.pop()  # ')'
+                continue
             if self.token.type in Tokenizer.comperators:
-                comparator = self.token
+                buffer.append(Token("COMPERATOR", self.token.value))
                 self.pop()
                 continue
-            if comparator is None:
-                left.append(self.token)
-            else:
-                right.append(self.token)
+            if self.token.type in Tokenizer.operators:
+                buffer.append(Token("OPERATOR", self.token.value))
+                self.pop()
+                continue
+
+
+            buffer.append(self.token)
             self.pop()
 
+        return Token("EXPR", buffer)
 
-        return buffer
+    def parse_condition(self):
+        condition = self.parse_expression()
+        self.pop() # consume RP
+        if self.token.type != "LBRACE":
+            raise SyntaxError("Expected '{' after IF condition but got " + self.token.type)
+        return condition
+
 
     def parse_if_else_body(self):
         body = []
         while True:
-            self.pop()
+            #print("Parsing IF/ELSE BODY, current token:", self.token)
+            #self.pop()
             if self.token.type == "RBRACE":
+                print("Finished IF/ELSE BODY parsing, body:", body)
                 break
             if self.token.type == "CREATE":
-                body.append(("CREATE_STMT", self.parse_create_stmt()))
+                body.append(Token("CREATE_STMT", self.parse_create_stmt()))
             if self.token.type == "SET":
-                body.append(("SET_STMT", self.parse_set_stmt()))
+                body.append(Token("SET_STMT", self.parse_set_stmt()))
             if self.token.type == "PRINT":
-                body.append(("PRINT_STMT", self.parse_print_stmt()))
+                body.append(Token("PRINT_STMT", self.parse_print_stmt()))
             if self.token.type == "IF":
-                body.append(("IF_STMT", self.parse_if_stmt()))
+                body.append(Token("IF_STMT", self.parse_if_stmt()))
             if self.token.type == "IDENT":
                 body.append(self.parse_ident())
+            if self.token.type == "RETURN":
+                body.append(Token("RETURN_STMT", self.parse_return_stmt()))
+            if self.token.type == "SEMI":
+                self.pop()
             if self.token.type == "CLASS":
                 raise NotImplementedError("Nested classes are not supported yet")
         return body

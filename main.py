@@ -8,7 +8,7 @@ code = """class Ball [radius:int, x:int, y:int, speed:float]:
   create float pi = 3.14;
   print(pi);
   if(z > 5){
-    print(z);
+    print((z+5)*2);
   } else {
     print(0);
   }
