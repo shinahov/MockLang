@@ -153,12 +153,18 @@ class Parser:
                 break
             if self.token.type == "TO":
                 self.pop()
+                print("Parsing SET_STMT TO expression...")
                 buffer.append(Token("TO", self.parse_expression()))
                 #self.pop()
                 return buffer
             if self.token.type == "IDENT":
                 buffer.append(Token("IDENT", self.token.value))
+            if self.token.type == "DOT":
+                buffer.append(Token("DOT", self.token.value))
+                self.pop()
+            print("SET_STMT parsing, current token:", self.token)
             self.pop()
+
 
         return buffer
 
@@ -196,7 +202,7 @@ class Parser:
     def parse_ident(self):
 
         name = self.token.value
-        #print("Parsing IDENT:", name)
+        print("Parsing IDENT:", name)
         self.pop()
         if self.token.type == "DOT":
             self.pop()
@@ -214,27 +220,30 @@ class Parser:
                                                 method_name,
                                                 Token("ARGS", args)]))
         elif self.token.type == "LP":
-            #print("Parsing function/method call or definition for:", name)
+            print("Parsing function/method call or definition for:", name)
             buffer = []
             while True:
-                self.pop()
-                #print("Current token in IDENT parsing:", self.token)
+                self.pop() # consume (
+                print("Current token in IDENT parsing:", self.token)
                 if self.token.type in ["SEMI", "ARROW"]:
                     break
                 buffer.append(self.token)
                 #print("Buffer so far:", buffer)
-            buffer.pop(0)  # remove RP
+            #buffer.pop(0)  # remove RP
 
             if self.token.type == "SEMI":
-                return ("FN_CALL", self.token.value, buffer)
+
+                return (Token("FN_CALL", [Token("NAME", name),
+                                          Token("ARGS", buffer)]))
             elif self.token.type == "ARROW":
                 self.pop()
                 return_type = self.parse_return_type()
-                #print("Return type token:", return_type)
+                print("Return type token:", return_type)
                 assert self.token.type == "COLON"
                 self.pop()
                 body = self.parse_method_body()
-                return (Token("METHOD_DEF",
+                print("Method body parsed:", body)
+                return (Token("METHOD_DEF   ",
                               [Token("NAME", name),
                                Token("ARGS", buffer),
                                Token("RETURN_TYPE", return_type),
@@ -264,7 +273,10 @@ class Parser:
             if self.token.type == "CREATE":
                 body.append(Token("CREATE_STMT", self.parse_create_stmt()))
             if self.token.type == "SET":
+                print("Parsing SET_STMT in method body...", self.token)
                 body.append(Token("SET_STMT", self.parse_set_stmt()))
+                print("SET_STMT parsed:", body)
+                print("Next token after SET_STMT:", self.token)
             if self.token.type == "PRINT":
                 body.append(Token("PRINT_STMT", self.parse_print_stmt()))
             if self.token.type == "IF":
@@ -276,6 +288,8 @@ class Parser:
                 body.append(Token("RETURN_STMT", self.parse_return_stmt()))
                 #print("RETURN parsed:", body)
                 return body
+            if self.token.type == "SEMI":
+                self.pop()
             if self.token.type == "CLASS":
                 raise NotImplementedError("Nested classes are not supported yet")
         return body
@@ -374,6 +388,7 @@ class Parser:
 
 
             buffer.append(self.token)
+            print(buffer)
             self.pop()
 
         return Token("EXPR", buffer)
