@@ -210,7 +210,9 @@ class Parser:
             assert self.token.type == "RP"
             self.pop()
             assert self.token.type == "SEMI"
-            return ("METHOD_CALL", self.token.value, f"{name}.{method_name.value}", args)
+            return (Token("CLASS_METHOD_CALL", [Token("CLASS", name),
+                                                method_name,
+                                                Token("ARGS", args)]))
         elif self.token.type == "LP":
             #print("Parsing function/method call or definition for:", name)
             buffer = []
@@ -232,7 +234,12 @@ class Parser:
                 assert self.token.type == "COLON"
                 self.pop()
                 body = self.parse_method_body()
-                return ("METHOD_DEF", name, buffer, return_type, body)
+                return (Token("METHOD_DEF",
+                              [Token("NAME", name),
+                               Token("ARGS", buffer),
+                               Token("RETURN_TYPE", return_type),
+                               Token("BODY", body)]))
+                #return ("METHOD_DEF", name, buffer, return_type, body)
 
     def parse_args(self):
         args = []
