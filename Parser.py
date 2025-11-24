@@ -16,14 +16,26 @@ def pretty_print(obj, indent=0):  # custom print function for debugging
             pretty_print(item, indent + 1)
         print(space + ")")
 
-    elif hasattr(obj, "type") and hasattr(obj, "value"):  # Token
+
+    elif hasattr(obj, "type") and hasattr(obj, "value"):
+
         if isinstance(obj.value, list):
+
             print(f"{space}Token({obj.type}, [")
+
             for val in obj.value:
                 pretty_print(val, indent + 1)
+
             print(space + "])")
+
         else:
-            print(f"{space}Token({obj.type}, {obj.value})")
+
+            print(f"{space}Token({obj.type},")
+
+            pretty_print(obj.value, indent + 1)
+
+            print(space + ")")
+
 
     else:
         print(space + str(obj))
@@ -239,15 +251,10 @@ class Parser:
                                                 Token("ARGS", args)]))
         elif self.token.type == "LP":
             print("Parsing function/method call or definition for:", name)
-            buffer = []
-            while True:
-                self.pop() # consume (
-                print("Current token in IDENT parsing:", self.token)
-                if self.token.type in ["SEMI", "ARROW"]:
-                    break
-                buffer.append(self.token)
-                #print("Buffer so far:", buffer)
-            #buffer.pop(0)  # remove RP
+            self.pop() # consume (
+            buffer = self.parse_args()
+            self.pop() # consume )
+
 
             if self.token.type == "SEMI":
 
@@ -261,7 +268,7 @@ class Parser:
                 self.pop()
                 body = self.parse_method_body()
                 print("Method body parsed:", body)
-                return (Token("METHOD_DEF   ",
+                return (Token("METHOD_DEF",
                               [Token("NAME", name),
                                Token("ARGS", buffer),
                                Token("RETURN_TYPE", return_type),
