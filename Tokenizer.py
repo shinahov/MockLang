@@ -26,6 +26,9 @@ class Tokenizer:
         "end": "END",
         "to": "TO",
         "void": "TYPE_VOID",
+        "false": "FALSE",
+        "true": "TRUE",
+        "self": "SELF"
     }
     TWO = {"->": "ARROW",
            "=?": "EQUALSQ",
@@ -43,11 +46,11 @@ class Tokenizer:
 
     comperators = {"EQ", "EQUALSQ", "LT", "GT", "LE", "GE", "NE"}
     operators = {"PLUS", "MINUS", "STAR", "SLASH"}
-
     def tokenize(self, code):
         tokens = []
         i = 0
         while i < len(code):
+            #print(f"Processing character '{code[i]}' at position {i}")
             if code[i].isspace():
                 i += 1
                 continue
@@ -66,6 +69,13 @@ class Tokenizer:
                 word = code[start:i]
                 if word in self.KEYWORDS:
                     tokens.append(Token(self.KEYWORDS[word], word))
+                elif re.match(r'^[A-Z][A-Za-z0-9_]*$', word):
+                    print(f"Identified class identifier: {word}")
+                    if word == "END":
+                        print("Identified END keyword as class identifier")
+                        tokens.append(Token("END", word))
+                    else:
+                        tokens.append(Token("CLASS_NAME", word))
                 else:
                     tokens.append(Token("IDENT", word))
                 continue
@@ -86,6 +96,7 @@ class Tokenizer:
                     tokens.append(Token("INT", int(number)))
                 continue
             print(f"Error: unrecognized character '{code[i]}' at position {i}")
+
             i += 1
         tokens.append(Token("EOF", None))
         return tokens

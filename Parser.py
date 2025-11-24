@@ -45,7 +45,7 @@ class Parser:
         assert self.token.type == "CLASS"
         self.pop()
         class_name = self.token
-        assert class_name.type == "IDENT"
+        assert class_name.type == "CLASS_NAME"
         self.programm.append(Token("CLASS_DEF", class_name.value))
         self.pop()
         token = self.token
@@ -68,6 +68,7 @@ class Parser:
             self.pop() # consume ; maybe
             #print("next token in body:", self.token)
             if self.token.type == "END":
+                #pretty_print(body)
                 break
             if self.token.type == "CREATE":
                 body.append(Token("CREATE_STMT", self.parse_create_stmt()))
@@ -114,14 +115,14 @@ class Parser:
         buffer = []
         if self.token.type != "CREATE":
             raise SyntaxError("CREATE_STMT must start with CREATE")
-        self.pop()
+        self.pop() # consume CREATE
 
         while True:
             #print("Parsing CREATE_STMT, current token:", self.token)
             if self.token.type == "SEMI":
                 break
             if (self.token.type.startswith("TYPE_") or
-                    self.token.type == "IDENT"):
+                    self.token.type == "IDENT") or self.token.type == "CLASS_NAME":
                 buffer.append(Token("TYPE", self.token.value))
                 self.pop()
                 if self.token.type == "IDENT":
@@ -130,13 +131,25 @@ class Parser:
                     if self.token.type == "EQ":
                         buffer.append(Token("EQ", self.token.value))
                         self.pop()
-                        if self.token.type == "IDENT" :
+                        print("here", self.token)
+                        if self.token.type == "IDENT"  :
                             buffer.append(Token("IDENT", self.token.value))
                             self.pop()
+                        elif self.token.type == "CLASS_NAME":
+                            buffer.append(Token("CLASS_NAME", self.token.value))
+                            self.pop() # consume CLASS_NAME
+                            assert self.token.type == "LP"
+                            self.pop() # consume LP
+                            args = self.parse_args()
+                            buffer.append(Token("ARGS", args))
+                            self.pop() # consume RP
+                            assert self.token.type == "SEMI"
+
                         else:
                             buffer.append(self.parse_expression())
                         return buffer
                     elif self.token.type == "SEMI":
+                        pretty_print(buffer)
                         return buffer
 
 
@@ -193,11 +206,13 @@ class Parser:
             else_body = self.parse_if_else_body()
             self.pop()  # consume RBRACE
             return (Token("IF_ELSE_STMT", [condition, body, else_body]))
+        print("IF_STMT parsed:", condition, body)
         return (Token("IF_STMT", [condition, body]))
 
 
     def parse_fn_def(self):
-        pass
+        self.pop() # consume FN
+        return self.parse_ident()
 
     def parse_ident(self):
 
@@ -211,10 +226,13 @@ class Parser:
             self.pop()
             # print(self.programm)
             assert self.token.type == "LP"
+            self.pop() # consume (
             args = self.parse_args()
-            self.pop()
+            #self.pop() # consume )
+            if self.token.type != "RP":
+                print("Expected ')' after method call arguments but got " , self.token.type)
             assert self.token.type == "RP"
-            self.pop()
+            self.pop() # consume )
             assert self.token.type == "SEMI"
             return (Token("CLASS_METHOD_CALL", [Token("CLASS", name),
                                                 method_name,
@@ -253,10 +271,11 @@ class Parser:
     def parse_args(self):
         args = []
         while True:
-            #print("Parsing argument, current token:", self.token)
+            print("Parsing argument, current token:", self.token)
             if self.token.type == "RP":
                 break
             if self.token.type == "COMMA":
+                self.pop() # skipp ,
                 continue
             args.append(self.token) # later parse expression
             self.pop()
@@ -269,6 +288,7 @@ class Parser:
             # self.pop()
 
             if self.token.type == "END":
+                #print("Finished method body parsing, body:", body)
                 break
             if self.token.type == "CREATE":
                 body.append(Token("CREATE_STMT", self.parse_create_stmt()))
@@ -281,6 +301,8 @@ class Parser:
                 body.append(Token("PRINT_STMT", self.parse_print_stmt()))
             if self.token.type == "IF":
                 body.append(Token("IF_STMT", self.parse_if_stmt()))
+                print("IF_STMT parsed ende?:", body)
+                print("Next token after IF_STMT:", self.token)
             if self.token.type == "IDENT":
                 body.append(self.parse_ident())
             if self.token.type == "RETURN":
@@ -290,6 +312,9 @@ class Parser:
                 return body
             if self.token.type == "SEMI":
                 self.pop()
+            #print("Current token in method body parsing:", self.token)
+            #print("Current method body:")
+            #pretty_print(body)
             if self.token.type == "CLASS":
                 raise NotImplementedError("Nested classes are not supported yet")
         return body
@@ -408,6 +433,7 @@ class Parser:
             #self.pop()
             if self.token.type == "RBRACE":
                 print("Finished IF/ELSE BODY parsing, body:", body)
+                print("Next token after IF/ELSE BODY:", self.token)
                 break
             if self.token.type == "CREATE":
                 body.append(Token("CREATE_STMT", self.parse_create_stmt()))
