@@ -18,7 +18,7 @@ code = """class Ball [radius:int, x:int, y:int, speed:float]:
     return self.radius, self.x(y), someOtherThing();
   end
 
-  setRadius(r:int) -> :
+  setRadius(r:int, p:int) -> :
     set self.radius to r;
   end 
 
