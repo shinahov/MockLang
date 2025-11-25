@@ -38,3 +38,26 @@ class SymbolTable:
 
     def __repr__(self):
         return f"SymbolTable(symbols={self.symbols}, parent={self.parent})"
+
+class SymbolTableManager:
+    def __init__(self):
+        self.table: SymbolTable = SymbolTable(parent=None)
+
+    def enter_scope(self):
+        self.table = SymbolTable(parent=self.table)
+
+    def exit_scope(self):
+        if self.table.parent is not None:
+            self.table = self.table.parent
+        else:
+            raise Exception("Cannot exit global scope")
+
+    def define(self, name, symbol_type, data_type, node):
+        return self.table.define(name, symbol_type, data_type, node)
+
+    def lookup(self, name):
+        if self.table is None:
+            raise Exception("No symbol table available")
+        if self.table.lookup(name) is None:
+            raise Exception(f"Symbol '{name}' not found")
+        return self.table.lookup(name)
