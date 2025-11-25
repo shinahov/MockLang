@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum, auto
 
+
 class SymbolType(Enum):
     VARIABLE = auto()
     PARAM = auto()
@@ -9,12 +10,14 @@ class SymbolType(Enum):
     CLASS = auto()
     TYPE = auto()
 
+
 @dataclass
 class Symbol:
     name: str
     type: SymbolType
     data_type: str
     node: object  # Reference to the AST node
+
 
 class SymbolTable:
     def __init__(self, parent=None):
@@ -38,6 +41,7 @@ class SymbolTable:
 
     def __repr__(self):
         return f"SymbolTable(symbols={self.symbols}, parent={self.parent})"
+
 
 class SymbolTableManager:
     def __init__(self):

@@ -1,6 +1,8 @@
 import os, sys, re
 import Tokenizer
 import Parser
+import SymbolAnalyzer as SA
+import Symbol_table as ST
 
 code = """class Ball [radius:int, x:int, y:int, speed:float]:
   create int z;
@@ -60,6 +62,9 @@ def let_test():
     programm = parser.parse()
     print("Programm:")
     Parser.pretty_print(programm)
+    table = ST.SymbolTableManager()
+    analyzer = SA.SymbolAnalyzer(table, programm)
+    analyzer.analyze()
 
 
 if __name__ == "__main__":
