@@ -19,8 +19,23 @@ class SymbolAnalyzer:
                 assert methode[1].type == "ARGS"
                 assert methode[2].type == "RETURN_TYPE"
                 assert methode[3].type == "BODY"
-                print(methode[1].value)
+                #print(methode[1].value)
                 self.analyze_method(methode)
+            elif statement.type == "CREATE_STMT":
+                crate_stmt = statement.value
+                assert crate_stmt[0].type == "TYPE"
+                assert crate_stmt[1].type == "IDENT"
+                var_type = crate_stmt[0].value
+                var_name = crate_stmt[1].value
+                self.symbol_table_manager.define(
+                    var_name,
+                    SymbolType.VARIABLE,
+                    var_type,
+                    crate_stmt[1]
+                )
+            print("Symbol Table after analysing statement:")
+            print(self.symbol_table_manager.table)
+
 
 
 
@@ -35,9 +50,6 @@ class SymbolAnalyzer:
                 type,
                 Tokenizer.Token(type, name)
             )
-        print("Symbol Table after analysis:")
-        print(self.symbol_table_manager.table)
-
         self.analysed_body(body)
 
     def analyze_method(self, methode):
@@ -72,8 +84,8 @@ class SymbolAnalyzer:
                 ident_tok
             )
 
-        print("Symbol Table after analysing args:")
-        print(self.symbol_table_manager.table)
+        #print("Symbol Table after analysing args:")
+        #print(self.symbol_table_manager.table)
 
 
 
