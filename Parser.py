@@ -340,11 +340,12 @@ class Parser:
                 self.pop()  # skipp ','
                 continue
 
-            if self.token.type == "IDENT":
+            if self.token.type == "IDENT" or self.token.type == "SELF":
                 token = self.token
                 chain = []
-                self.pop()
+                self.pop() # skipp self or ident
                 if self.token.type == "DOT":
+                    print("HERE in return stmt parsing CLASS_METHOD_CALL with DOT :", token )
                     #dot = self.token
                     self.pop() # skipp '.'
                     if self.token.type != "IDENT":
@@ -390,6 +391,9 @@ class Parser:
                 if not buffer:
                     buffer.append(Token("TYPE_VOID", "void"))
                 return buffer
+            if self.token.type == "COMMA":
+                self.pop()
+                continue
             buffer.append(self.token)
             self.pop()
 

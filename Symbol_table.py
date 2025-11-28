@@ -17,6 +17,7 @@ class Symbol:
     type: SymbolType
     data_type: str
     node: object  # Reference to the AST node
+    slot: int
 
 
 class SymbolTable:
@@ -24,10 +25,10 @@ class SymbolTable:
         self.symbols = {}
         self.parent = parent
 
-    def define(self, name, symbol_type, data_type, node):
+    def define(self, name, symbol_type, data_type, node, slot=None):
         if name in self.symbols:
             raise Exception(f"Symbol '{name}' already defined in current scope")
-        symbol = Symbol(name, symbol_type, data_type, node)
+        symbol = Symbol(name, symbol_type, data_type, node, slot)
         self.symbols[name] = symbol
         return symbol
 
@@ -56,8 +57,8 @@ class SymbolTableManager:
         else:
             raise Exception("Cannot exit global scope")
 
-    def define(self, name, symbol_type, data_type, node):
-        return self.table.define(name, symbol_type, data_type, node)
+    def define(self, name, symbol_type, data_type, node, slot=None):
+        return self.table.define(name, symbol_type, data_type, node, slot)
 
     def lookup(self, name):
         if self.table is None:

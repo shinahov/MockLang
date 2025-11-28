@@ -14,7 +14,7 @@ code = """class Ball [radius:int, x:int, y:int, speed:float]:
   } else {
     print(0);
   }
-  getRadius() -> int, int:
+  getRadius() -> int, int, int:
     return self.radius, self.x(y), someOtherThing();
   end
 

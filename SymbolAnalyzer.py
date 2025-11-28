@@ -11,6 +11,7 @@ class SymbolAnalyzer:
         self.program = program
 
     def analysed_body(self, body):
+        var_slots = 0
         for statement in body.value:
             # print("type and value", statement.type, statement.value)
             if statement.type == "METHOD_DEF":
@@ -31,8 +32,10 @@ class SymbolAnalyzer:
                     var_name,
                     SymbolType.VARIABLE,
                     var_type,
-                    crate_stmt[1]
+                    crate_stmt[1],
+                    slot=var_slots
                 )
+                var_slots += 1
             print("Symbol Table after analysing statement:")
             print(self.symbol_table_manager.table)
 
@@ -40,6 +43,7 @@ class SymbolAnalyzer:
 
 
     def analyze(self):
+        field_slot = 0
         class_def = self.program[0]
         fields = self.program[1]
         body = self.program[2]
@@ -48,8 +52,10 @@ class SymbolAnalyzer:
                 name,
                 SymbolType.FIELD,
                 type,
-                Tokenizer.Token(type, name)
+                Tokenizer.Token(type, name),
+                slot=field_slot
             )
+            field_slot += 1
         self.analysed_body(body)
 
     def analyze_method(self, methode):
@@ -63,8 +69,10 @@ class SymbolAnalyzer:
         if len(args) % 3 != 0:
             raise Exception(f"Method '{name}' has mismatched argument names and types")
         self.analysed_args(args)
+        self.analysed_method_body(body)
 
     def analysed_args(self, args):
+        args_slot = 0
         for i in range(0, len(args), 3):
             ident_tok = args[i]
             colon_tok = args[i + 1]
@@ -81,11 +89,17 @@ class SymbolAnalyzer:
                 arg_name,
                 SymbolType.PARAM,
                 arg_type,
-                ident_tok
+                ident_tok,
+                slot=args_slot
             )
+            args_slot += 1
 
         #print("Symbol Table after analysing args:")
         #print(self.symbol_table_manager.table)
+
+    def analysed_method_body(self, body):
+        print("Analysing method body...")
+        print(body)
 
 
 
