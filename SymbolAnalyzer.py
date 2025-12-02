@@ -22,6 +22,15 @@ class SymbolAnalyzer:
                 assert methode[3].type == "BODY"
                 #print(methode[1].value)
                 self.analyze_method(methode)
+            elif statement.type == "FN_DEF":
+                FN_body = statement.value
+                body = FN_body.value
+                assert body[0].type == "NAME"
+                assert body[1].type == "ARGS"
+                assert body[2].type == "RETURN_TYPE"
+                assert body[3].type == "BODY"
+                print("all good so far")
+
             elif statement.type == "CREATE_STMT":
                 crate_stmt = statement.value
                 assert crate_stmt[0].type == "TYPE"
@@ -65,14 +74,21 @@ class SymbolAnalyzer:
         body = methode[3].value
 
         self.symbol_table_manager.enter_scope()
+        self.symbol_table_manager.define(
+            "self",
+            SymbolType.PARAM,
+            "SELF",
+            Tokenizer.Token("SELF", "self"),
+            slot=0
+        )
 
         if len(args) % 3 != 0:
             raise Exception(f"Method '{name}' has mismatched argument names and types")
-        self.analysed_args(args)
+        self.analysed_args(args, slots=1)  # Start slots from 1 to reserve 0 for 'self'
         self.analysed_method_body(body)
 
-    def analysed_args(self, args):
-        args_slot = 0
+    def analysed_args(self, args, slots=0):
+        args_slot = slots
         for i in range(0, len(args), 3):
             ident_tok = args[i]
             colon_tok = args[i + 1]
@@ -98,8 +114,22 @@ class SymbolAnalyzer:
         #print(self.symbol_table_manager.table)
 
     def analysed_method_body(self, body):
-        print("Analysing method body...")
-        print(body)
+        var_slots = 0
+        for statement in body:
+            if statement.type == "CREATE_STMT":
+                crate_stmt = statement.value
+                assert crate_stmt[0].type == "TYPE"
+                assert crate_stmt[1].type == "IDENT"
+                var_type = crate_stmt[0].value
+                var_name = crate_stmt[1].value
+                self.symbol_table_manager.define(
+                    var_name,
+                    SymbolType.VARIABLE,
+                    var_type,
+                    crate_stmt[1],
+                    slot=var_slots
+                )
+                var_slots += 1
 
 
 
