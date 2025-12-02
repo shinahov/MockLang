@@ -29,7 +29,7 @@ class SymbolAnalyzer:
                 assert body[1].type == "ARGS"
                 assert body[2].type == "RETURN_TYPE"
                 assert body[3].type == "BODY"
-                print("all good so far")
+                self.analyze_function(body)
 
             elif statement.type == "CREATE_STMT":
                 crate_stmt = statement.value
@@ -130,6 +130,21 @@ class SymbolAnalyzer:
                     slot=var_slots
                 )
                 var_slots += 1
+
+    def analyze_function(self, FN_body):
+        name = FN_body[0].value
+        args = FN_body[1].value
+        return_type = FN_body[2].value
+        body = FN_body[3].value
+
+        self.symbol_table_manager.enter_scope()
+
+
+        if len(args) % 3 != 0:
+            raise Exception(f"Method '{name}' has mismatched argument names and types")
+        self.analysed_args(args, slots=0)  # Start slots from 1 to reserve 0 for 'self'
+        self.analysed_method_body(body)
+
 
 
 
