@@ -45,8 +45,9 @@ class SymbolAnalyzer:
                     slot=var_slots
                 )
                 var_slots += 1
-            print("Symbol Table after analysing statement:")
-            print(self.symbol_table_manager.table)
+            #print("Symbol Table after analysing statement:")
+            #print(self.symbol_table_manager.table)
+
 
 
 
@@ -66,6 +67,7 @@ class SymbolAnalyzer:
             )
             field_slot += 1
         self.analysed_body(body)
+        return self.symbol_table_manager
 
     def analyze_method(self, methode):
         name = methode[0].value

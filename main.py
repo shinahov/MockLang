@@ -3,6 +3,7 @@ import Tokenizer
 import Parser
 import SymbolAnalyzer as SA
 import Symbol_table as ST
+import VMGenerator as VM
 
 code = """class Ball [radius:int, x:int, y:int, speed:float]:
   create int z;
@@ -65,6 +66,13 @@ def let_test():
     table = ST.SymbolTableManager()
     analyzer = SA.SymbolAnalyzer(table, programm)
     analyzer.analyze()
+    print("Final Symbol Table:")
+    print(table.table)
+    vm_generator = VM.VMGenerator(table, programm)
+    instructions = vm_generator.generate()
+    print("Generated VM Instructions:")
+    for instr in instructions:
+        print(instr)
 
 
 if __name__ == "__main__":
