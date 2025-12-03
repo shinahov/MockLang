@@ -9,6 +9,20 @@ class VMGenerator:
         self.symbol_table_manager = symbol_table_manager
         self.program = program
         self.instructions = []
+        self.class_name = ""
 
     def generate(self):
+        self.generate_class()
+
         return self.instructions
+
+    def generate_class(self):
+        assert self.program[0].type == "CLASS_DEF"
+        self.class_name = self.program[0].value
+        assert self.program[1].type == "FIELDS"
+        assert self.program[2].type == "BODY"
+        body = self.program[2]
+        result = self.generate_class_body(body)
+
+    def generate_class_body(self, body):
+        return None
