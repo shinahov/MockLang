@@ -25,4 +25,24 @@ class VMGenerator:
         result = self.generate_class_body(body)
 
     def generate_class_body(self, body):
-        return None
+        for statement in body.value:
+            if statement.type == "METHOD_DEF":
+                methode = statement.value
+                assert methode[0].type == "NAME"
+                assert methode[1].type == "ARGS"
+                assert methode[2].type == "RETURN_TYPE"
+                assert methode[3].type == "BODY"
+                ##self.generate_method(methode)
+            elif statement.type == "FN_DEF":
+                FN_body = statement.value
+                body = FN_body.value
+                assert body[0].type == "NAME"
+                assert body[1].type == "ARGS"
+                assert body[2].type == "RETURN_TYPE"
+                assert body[3].type == "BODY"
+                ##self.generate_function(body)
+            return None
+
+    def generate_method(self, methode):
+        pass
+

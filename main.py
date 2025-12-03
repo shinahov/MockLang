@@ -6,15 +6,7 @@ import Symbol_table as ST
 import VMGenerator as VM
 
 code = """class Ball [radius:int, x:int, y:int, speed:float]:
-  create int z;
-  set z to 10;
-  create float pi = 3.14;
-  print(pi);
-  if(z > 5){
-    print((z+5)*2);
-  } else {
-    print(0);
-  }
+  
   getRadius() -> int, int, int:
     return self.radius, self.x(y), someOtherThing();
   end
@@ -25,6 +17,15 @@ code = """class Ball [radius:int, x:int, y:int, speed:float]:
 
 
   fn main() -> void:
+    create int z;
+    set z to 10;
+    create float pi = 3.14;
+    print(pi);
+    if(z > 5){
+      print((z+5)*2);
+    } else {
+      print(0);
+    }
     create int b;
     set b to 5;
     print(b);
