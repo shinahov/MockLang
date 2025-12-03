@@ -75,7 +75,7 @@ class SymbolAnalyzer:
         return_type = methode[2].value
         body = methode[3].value
 
-        self.symbol_table_manager.enter_scope()
+        self.symbol_table_manager.enter_scope(name)
         self.symbol_table_manager.define(
             "self",
             SymbolType.PARAM,
@@ -88,6 +88,7 @@ class SymbolAnalyzer:
             raise Exception(f"Method '{name}' has mismatched argument names and types")
         self.analysed_args(args, slots=1)  # Start slots from 1 to reserve 0 for 'self'
         self.analysed_method_body(body)
+        self.symbol_table_manager.exit_scope()
 
     def analysed_args(self, args, slots=0):
         args_slot = slots
@@ -139,13 +140,14 @@ class SymbolAnalyzer:
         return_type = FN_body[2].value
         body = FN_body[3].value
 
-        self.symbol_table_manager.enter_scope()
+        self.symbol_table_manager.enter_scope(name)
 
 
         if len(args) % 3 != 0:
             raise Exception(f"Method '{name}' has mismatched argument names and types")
         self.analysed_args(args, slots=0)  # Start slots from 1 to reserve 0 for 'self'
         self.analysed_method_body(body)
+        self.symbol_table_manager.exit_scope()
 
 
 

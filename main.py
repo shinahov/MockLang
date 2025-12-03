@@ -6,6 +6,7 @@ import Symbol_table as ST
 import VMGenerator as VM
 
 code = """class Ball [radius:int, x:int, y:int, speed:float]:
+  create int q = 5;
   
   getRadius() -> int, int, int:
     return self.radius, self.x(y), someOtherThing();
@@ -68,6 +69,7 @@ def let_test():
     analyzer = SA.SymbolAnalyzer(table, programm)
     analyzer.analyze()
     print("Final Symbol Table:")
+
     print(table.table)
     vm_generator = VM.VMGenerator(table, programm)
     instructions = vm_generator.generate()

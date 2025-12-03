@@ -21,9 +21,11 @@ class Symbol:
 
 
 class SymbolTable:
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, name="class_scope"):
         self.symbols = {}
         self.parent = parent
+        self.children = []
+        self.name = name
 
     def define(self, name, symbol_type, data_type, node, slot=None):
         if name in self.symbols:
@@ -48,8 +50,15 @@ class SymbolTableManager:
     def __init__(self):
         self.table: SymbolTable = SymbolTable(parent=None)
 
-    def enter_scope(self):
-        self.table = SymbolTable(parent=self.table)
+    def enter_scope(self, name):
+        self.table = SymbolTable(parent=self.table, name=name)
+        self.table.parent.children.append(self.table)
+
+    def enter_scope_for_lookup(self, name):
+        for tabel in self.table.children:
+            if tabel.name == name:
+                self.table = tabel
+                return
 
     def exit_scope(self):
         if self.table.parent is not None:
