@@ -59,12 +59,11 @@ class VMGenerator:
             var_type = crate_stmt[0].value
             var_name = crate_stmt[1].value
             symbol = self.parse_symbol(var_name)
-            print(symbol)
-            return
             assert crate_stmt[2].type == "EQ"
             expr = crate_stmt[3]
             self.generate_expression(expr)
-            self.pop()
+            self.pop_symbol(symbol)
+            return
 
     def parse_symbol(self, var_name):
         symbol = self.symbol_table_manager.table.lookup(var_name)
@@ -80,6 +79,24 @@ class VMGenerator:
         else:
             raise Exception(f"Unsupported symbol type for '{var_name}'")
         return (f"{segment} {symbol.slot}")
+
+    def generate_expression(self, expr):
+        if len(expr.value) == 1:
+            self.write_value(expr.value[0])
+
+    def write_value(self, param):
+        if param.type == "INT":
+            self.instructions.append(f"push constant {param.value}")
+        elif param.type == "FLOAT":
+            self.instructions.append(f"push constant {param.value}")
+        elif param.type == "IDENT":
+            symbol = self.parse_symbol(param.value)
+            self.instructions.append(f"push {symbol}")
+        else:
+            raise Exception(f"Unsupported parameter type '{param.type}'")
+
+    def pop_symbol(self, symbol):
+        self.instructions.append(f"pop {symbol}")
 
 
 
