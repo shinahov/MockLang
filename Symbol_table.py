@@ -75,3 +75,14 @@ class SymbolTableManager:
         if self.table.lookup(name) is None:
             raise Exception(f"Symbol '{name}' not found")
         return self.table.lookup(name)
+
+    def count_vars(self, name):
+        count = 0
+        for tabel in self.table.children:
+            if tabel.name == name:
+                for symbol in tabel.symbols.values():
+                    #print(symbol)
+                    if symbol.type == SymbolType.VARIABLE:
+                        count += 1
+        return count
+

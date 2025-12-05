@@ -8,18 +8,27 @@ import VMGenerator as VM
 code = """class Ball [radius:int, x:int, y:int, speed:float]:
   create int q = 5;
   
-  getRadius() -> int, int, int:
-    return self.radius, self.x(y), someOtherThing();
+  getBall() -> int, int, int:
+    create int a = 11;
+    some_func(a);
+    return self.radius, self.x, self.q;
   end
 
-  setRadius(r:int, p:int) -> :
+  setBall(r:int, x:int) -> :
     set self.radius to r;
+    set self.x to x;
   end 
+  
+  fn some_func(val:int) -> void:
+    print(val);
+  end
 
 
   fn main() -> void:
     create int z;
     set z to 10;
+    create int a;
+    create int c;
     create float pi = 3.14;
     print(pi);
     if(z > 5){
@@ -32,8 +41,11 @@ code = """class Ball [radius:int, x:int, y:int, speed:float]:
     print(b);
 
     create Ball ball = Ball(5, 10, 3, 3.14);
-    ball.setRadius(6);
-    print(ball.getRadius());
+    ball.setBall(6, 7);
+    set z, a, c to ball.getBall();
+    print(z);
+    print(a);
+    print(c);
     if(ball.radius =? 9){
       print(6);
     }

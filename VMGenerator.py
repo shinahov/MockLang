@@ -46,10 +46,21 @@ class VMGenerator:
                 assert crate_stmt[0].type == "TYPE"
                 assert crate_stmt[1].type == "IDENT"
                 self.generate_create_statement(crate_stmt)
-            return None
+            #return None
 
     def generate_method(self, methode):
-        pass
+        name = methode[0].value
+        local_count = self.symbol_table_manager.count_vars(name)
+        self.instructions.append(f"function {self.class_name}.{name} {local_count}")
+        self.push_symbol("argument 0")
+        self.pop_symbol("pointer 0")
+        print(self.instructions)
+        assert methode[3].type == "BODY"
+        body = methode[3]
+        self.generate_method_body(body)
+
+
+
 
     def generate_function(self, body):
         pass
@@ -63,7 +74,7 @@ class VMGenerator:
             expr = crate_stmt[3]
             self.generate_expression(expr)
             self.pop_symbol(symbol)
-            return
+
 
     def parse_symbol(self, var_name):
         symbol = self.symbol_table_manager.table.lookup(var_name)
@@ -97,6 +108,33 @@ class VMGenerator:
 
     def pop_symbol(self, symbol):
         self.instructions.append(f"pop {symbol}")
+        
+    def push_symbol(self, symbol):
+        self.instructions.append(f"push {symbol}")
+
+    def generate_method_body(self, body):
+        self.symbol_table_manager.enter_scope_for_lookup(body.type)
+        for statement in body.value:
+            if statement.type == "SET_STMT":
+                set_stmt = statement.value
+                self.generate_set_statement(set_stmt)
+            elif statement.type == "PRINT_STMT":
+                print_stmt = statement.value
+                self.generate_print_statement(print_stmt)
+            elif statement.type == "RETURN_STMT":
+                return_stmt = statement.value
+                self.generate_return_statement(return_stmt)
+
+
+
+    def generate_set_statement(self, set_stmt):
+        pass
+
+    def generate_print_statement(self, print_stmt):
+        pass
+
+    def generate_return_statement(self, return_stmt):
+        pass
 
 
 
