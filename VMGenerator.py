@@ -67,7 +67,6 @@ class VMGenerator:
 
     def generate_create_statement(self, crate_stmt):
         if len(crate_stmt) == 4:
-            print(crate_stmt)
             var_type = crate_stmt[0].value
             var_name = crate_stmt[1].value
             symbol = self.parse_symbol(var_name)
@@ -79,7 +78,7 @@ class VMGenerator:
 
     def parse_symbol(self, var_name):
         symbol = self.symbol_table_manager.table.lookup(var_name)
-        print(self.symbol_table_manager.table)
+        #print(self.symbol_table_manager.table)
         if symbol is None:
             raise Exception(f"Undefined variable '{var_name}'")
         segment = None
@@ -115,13 +114,9 @@ class VMGenerator:
         self.instructions.append(f"push {symbol}")
 
     def generate_method_body(self, body, method_name):
-        print("bevor entering scope for method body")
-        print(method_name)
-        print(self.symbol_table_manager.table)
         self.symbol_table_manager.enter_scope_for_lookup(method_name)
-        print("after entering scope for method body")
-        print(self.symbol_table_manager.table)
         for statement in body.value:
+            print(statement)
             if statement.type == "SET_STMT":
                 set_stmt = statement.value
                 self.generate_set_statement(set_stmt)
@@ -137,6 +132,10 @@ class VMGenerator:
             elif statement.type == "IF_STMT":
                 if_stmt = statement.value
                 self.generate_if_statement(if_stmt)
+            elif statement.type == "FN_CALL":
+                fn_call = statement.value
+                self.generate_function_call(fn_call)
+        self.symbol_table_manager.exit_scope()
 
 
 
@@ -151,6 +150,19 @@ class VMGenerator:
 
     def generate_if_statement(self, if_stmt):
         pass
+
+    def generate_function_call(self, fn_call):
+        name = fn_call[0].value
+        args = fn_call[1].value
+        for arg in args:
+            if arg.type == "INT" or arg.type == "FLOAT":
+                self.instructions.append(f"push constant {arg.value}")
+            elif arg.type == "IDENT":
+                symbol = self.parse_symbol(arg.value)
+                self.instructions.append(f"push {symbol}")
+        self.instructions.append(f"call {name} {len(args)}")
+
+
 
 
 

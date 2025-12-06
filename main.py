@@ -10,7 +10,7 @@ code = """class Ball [radius:int, x:int, y:int, speed:float]:
   
   getBall() -> int, int, int:
     create int a = 11;
-    some_func(a);
+    some_func(55, a);
     return self.radius, self.x, self.q;
   end
 
@@ -19,7 +19,7 @@ code = """class Ball [radius:int, x:int, y:int, speed:float]:
     set self.x to x;
   end 
   
-  fn some_func(val:int) -> void:
+  fn some_func(val:int, zahl:int) -> void:
     print(val);
   end
 
