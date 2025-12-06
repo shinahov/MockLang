@@ -54,10 +54,10 @@ class VMGenerator:
         self.instructions.append(f"function {self.class_name}.{name} {local_count}")
         self.push_symbol("argument 0")
         self.pop_symbol("pointer 0")
-        print(self.instructions)
+        #print(self.instructions)
         assert methode[3].type == "BODY"
         body = methode[3]
-        self.generate_method_body(body)
+        self.generate_method_body(body, name)
 
 
 
@@ -67,6 +67,7 @@ class VMGenerator:
 
     def generate_create_statement(self, crate_stmt):
         if len(crate_stmt) == 4:
+            print(crate_stmt)
             var_type = crate_stmt[0].value
             var_name = crate_stmt[1].value
             symbol = self.parse_symbol(var_name)
@@ -78,6 +79,7 @@ class VMGenerator:
 
     def parse_symbol(self, var_name):
         symbol = self.symbol_table_manager.table.lookup(var_name)
+        print(self.symbol_table_manager.table)
         if symbol is None:
             raise Exception(f"Undefined variable '{var_name}'")
         segment = None
@@ -112,8 +114,13 @@ class VMGenerator:
     def push_symbol(self, symbol):
         self.instructions.append(f"push {symbol}")
 
-    def generate_method_body(self, body):
-        self.symbol_table_manager.enter_scope_for_lookup(body.type)
+    def generate_method_body(self, body, method_name):
+        print("bevor entering scope for method body")
+        print(method_name)
+        print(self.symbol_table_manager.table)
+        self.symbol_table_manager.enter_scope_for_lookup(method_name)
+        print("after entering scope for method body")
+        print(self.symbol_table_manager.table)
         for statement in body.value:
             if statement.type == "SET_STMT":
                 set_stmt = statement.value
@@ -124,6 +131,12 @@ class VMGenerator:
             elif statement.type == "RETURN_STMT":
                 return_stmt = statement.value
                 self.generate_return_statement(return_stmt)
+            elif statement.type == "CREATE_STMT":
+                crate_stmt = statement.value
+                self.generate_create_statement(crate_stmt)
+            elif statement.type == "IF_STMT":
+                if_stmt = statement.value
+                self.generate_if_statement(if_stmt)
 
 
 
@@ -134,6 +147,9 @@ class VMGenerator:
         pass
 
     def generate_return_statement(self, return_stmt):
+        pass
+
+    def generate_if_statement(self, if_stmt):
         pass
 
 

@@ -36,6 +36,9 @@ code = """class Ball [radius:int, x:int, y:int, speed:float]:
     } else {
       print(0);
     }
+    loop(int i,(0, 3)){
+        print(i);
+    }
     create int b;
     set b to 5;
     print(b);
@@ -72,7 +75,7 @@ class Compiler:
 
 def let_test():
     tokens = Tokenizer.Tokenizer().tokenize(code)
-    #print("Tokens:", tokens)
+    print("Tokens:", tokens)
     parser = Parser.Parser(tokens)
     programm = parser.parse()
     print("Programm:")

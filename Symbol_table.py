@@ -59,7 +59,7 @@ class SymbolTableManager:
             if tabel.name == name:
                 self.table = tabel
                 return
-
+        print("No scope found for", name)
     def exit_scope(self):
         if self.table.parent is not None:
             self.table = self.table.parent

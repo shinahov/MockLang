@@ -70,9 +70,9 @@ class Tokenizer:
                 if word in self.KEYWORDS:
                     tokens.append(Token(self.KEYWORDS[word], word))
                 elif re.match(r'^[A-Z][A-Za-z0-9_]*$', word):
-                    print(f"Identified class identifier: {word}")
+                    #print(f"Identified class identifier: {word}")
                     if word == "END":
-                        print("Identified END keyword as class identifier")
+                        #print("Identified END keyword as class identifier")
                         tokens.append(Token("END", word))
                     else:
                         tokens.append(Token("CLASS_NAME", word))

@@ -71,6 +71,7 @@ class SymbolAnalyzer:
 
     def analyze_method(self, methode):
         name = methode[0].value
+        print("Analyzing method:", name)
         args = methode[1].value
         return_type = methode[2].value
         body = methode[3].value
@@ -87,6 +88,7 @@ class SymbolAnalyzer:
         if len(args) % 3 != 0:
             raise Exception(f"Method '{name}' has mismatched argument names and types")
         self.analysed_args(args, slots=1)  # Start slots from 1 to reserve 0 for 'self'
+        print("Method body to analyse:", name)
         self.analysed_method_body(body)
         self.symbol_table_manager.exit_scope()
 
@@ -113,11 +115,9 @@ class SymbolAnalyzer:
             )
             args_slot += 1
 
-        #print("Symbol Table after analysing args:")
-        #print(self.symbol_table_manager.table)
-
     def analysed_method_body(self, body):
         var_slots = 0
+        print("Analysing method body:", body)
         for statement in body:
             if statement.type == "CREATE_STMT":
                 crate_stmt = statement.value
@@ -146,6 +146,8 @@ class SymbolAnalyzer:
         if len(args) % 3 != 0:
             raise Exception(f"Method '{name}' has mismatched argument names and types")
         self.analysed_args(args, slots=0)  # Start slots from 1 to reserve 0 for 'self'
+        print("Function body to analyse:", name)
+        print("Function body:", body)
         self.analysed_method_body(body)
         self.symbol_table_manager.exit_scope()
 
