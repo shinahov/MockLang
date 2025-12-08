@@ -22,7 +22,7 @@ class VMGenerator:
         assert self.program[1].type == "FIELDS"
         assert self.program[2].type == "BODY"
         body = self.program[2]
-        constructor = self.constructor_generator(self.program[1].value, body)
+        self.constructor_generator(self.program[1].value, body)
         result = self.generate_class_body(body)
 
     def generate_class_body(self, body):
@@ -55,7 +55,14 @@ class VMGenerator:
         #print(self.instructions)
         assert methode[3].type == "BODY"
         body = methode[3]
+        assert methode[1].type == "ARGS"
+        assert methode[2].type == "RETURN_TYPE"
+        return_types = methode[2].value
         self.generate_method_body(body, name)
+        print("return types", return_types)
+        if len(return_types) == 1 and return_types[0].type == "TYPE_VOID":
+            self.instructions.append("push constant 0")
+            self.instructions.append("return")
 
 
 
@@ -92,6 +99,7 @@ class VMGenerator:
 
     def generate_expression(self, expr):
         if len(expr.value) == 1:
+            print("single value expression", expr.value[0])
             self.write_value(expr.value[0])
 
     def write_value(self, param):
@@ -117,7 +125,7 @@ class VMGenerator:
             print(statement)
             if statement.type == "SET_STMT":
                 set_stmt = statement.value
-                self.generate_set_statement(set_stmt)
+                self.generate_set_statement(set_stmt, method_name)
             elif statement.type == "PRINT_STMT":
                 print_stmt = statement.value
                 self.generate_print_statement(print_stmt)
@@ -133,18 +141,49 @@ class VMGenerator:
             elif statement.type == "FN_CALL":
                 fn_call = statement.value
                 self.generate_function_call(fn_call)
+                self.pop_symbol("temp 0")
         self.symbol_table_manager.exit_scope()
 
 
 
-    def generate_set_statement(self, set_stmt):
-        pass
+    def generate_set_statement(self, set_stmt, method_name):
+        if len(set_stmt) == 3:
+            calss_var = set_stmt[0]
+            var = set_stmt[1]
+            assert set_stmt[2].type == "TO"
+            expr = set_stmt[2].value
+            self.generate_expression(expr)
+            if calss_var.type == "IDENT":
+                pass
+                #todo
+            elif calss_var.type == "SELF":
+                slot = self.symbol_table_manager.lookup(var.value)
+                while slot.type != ST.SymbolType.FIELD:
+                    self.symbol_table_manager.exit_scope()
+                    slot = self.symbol_table_manager.lookup(var.value)
+                self.symbol_table_manager.enter_scope_for_lookup(method_name)
+                print(self.symbol_table_manager.table.symbols)
+                self.pop_symbol(f"this {slot.slot}")
+
+
 
     def generate_print_statement(self, print_stmt):
         pass
 
     def generate_return_statement(self, return_stmt):
-        pass
+        for expr in return_stmt:
+            print("expressions in return", expr)
+            if len(expr) == 1:
+                self.write_value(expr[0])
+            elif len(expr) == 2:
+                if expr[0].value == "self":
+                    slot = self.symbol_table_manager.lookup(expr[1].value)
+                    self.push_symbol(f"this {slot.slot}")
+                #todo for other cases
+        self.instructions.append("return")
+
+
+
 
     def generate_if_statement(self, if_stmt):
         pass
@@ -176,6 +215,9 @@ class VMGenerator:
                     self.generate_expression(expr)
                 self.pop_symbol("this " + str(args))
                 args += 1
+        self.push_symbol("pointer 0")
+        self.instructions.append("return")
+
 
 
 
@@ -185,6 +227,9 @@ class VMGenerator:
         for i in range(args):
             self.push_symbol(f"argument {i}")
             self.pop_symbol(f"this {i}")
+
+    def return_statment(self, expr):
+        print(expr)
 
 
 

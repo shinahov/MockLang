@@ -11,7 +11,7 @@ code = """class Ball [radius:int, x:int, y:int, speed:float]:
   getBall() -> int, int, int:
     create int a = 11;
     some_func(55, a);
-    return self.radius, self.x, self.q;
+    return self.radius, a, self.q;
   end
 
   setBall(r:int, x:int) -> :

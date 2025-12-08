@@ -355,6 +355,8 @@ class Parser:
                     args = self.parse_args()
                     self.pop()  # skipp ')'
                     chain.append(Token("FN_CALL", [token, Token("ARGS", args)]))
+                else:
+                    chain.append(token)
 
                 cur.extend(chain)
                 continue

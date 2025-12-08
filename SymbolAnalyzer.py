@@ -10,8 +10,8 @@ class SymbolAnalyzer:
         self.symbol_table_manager = symbol_table_manager
         self.program = program
 
-    def analysed_body(self, body):
-        var_slots = 0
+    def analysed_body(self, body, field_slot):
+        var_slots = field_slot
         for statement in body.value:
             # print("type and value", statement.type, statement.value)
             if statement.type == "METHOD_DEF":
@@ -20,7 +20,6 @@ class SymbolAnalyzer:
                 assert methode[1].type == "ARGS"
                 assert methode[2].type == "RETURN_TYPE"
                 assert methode[3].type == "BODY"
-                #print(methode[1].value)
                 self.analyze_method(methode)
             elif statement.type == "FN_DEF":
                 FN_body = statement.value
@@ -30,7 +29,6 @@ class SymbolAnalyzer:
                 assert body[2].type == "RETURN_TYPE"
                 assert body[3].type == "BODY"
                 self.analyze_function(body)
-
             elif statement.type == "CREATE_STMT":
                 crate_stmt = statement.value
                 assert crate_stmt[0].type == "TYPE"
@@ -39,7 +37,7 @@ class SymbolAnalyzer:
                 var_name = crate_stmt[1].value
                 self.symbol_table_manager.define(
                     var_name,
-                    SymbolType.VARIABLE,
+                    SymbolType.FIELD,
                     var_type,
                     crate_stmt[1],
                     slot=var_slots
@@ -66,7 +64,7 @@ class SymbolAnalyzer:
                 slot=field_slot
             )
             field_slot += 1
-        self.analysed_body(body)
+        self.analysed_body(body, field_slot)
         return self.symbol_table_manager
 
     def analyze_method(self, methode):
