@@ -45,6 +45,9 @@ class SymbolTable:
     def __repr__(self):
         return f"SymbolTable(symbols={self.symbols}, parent={self.parent})"
 
+    def length(self):
+        return len(self.symbols)
+
 
 class SymbolTableManager:
     def __init__(self):

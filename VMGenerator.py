@@ -22,6 +22,7 @@ class VMGenerator:
         assert self.program[1].type == "FIELDS"
         assert self.program[2].type == "BODY"
         body = self.program[2]
+        constructor = self.constructor_generator(self.program[1].value, body)
         result = self.generate_class_body(body)
 
     def generate_class_body(self, body):
@@ -42,10 +43,7 @@ class VMGenerator:
                 assert body[3].type == "BODY"
                 self.generate_function(body)
             elif statement.type == "CREATE_STMT":
-                crate_stmt = statement.value
-                assert crate_stmt[0].type == "TYPE"
-                assert crate_stmt[1].type == "IDENT"
-                self.generate_create_statement(crate_stmt)
+                pass
             #return None
 
     def generate_method(self, methode):
@@ -161,6 +159,33 @@ class VMGenerator:
                 symbol = self.parse_symbol(arg.value)
                 self.instructions.append(f"push {symbol}")
         self.instructions.append(f"call {name} {len(args)}")
+
+    def constructor_generator(self, value, body):
+        field_count = self.symbol_table_manager.table.length()
+        self.instructions.append(f"function {self.class_name}.<init> 0")
+        self.instructions.append(f"push constant {field_count}")
+        self.instructions.append("call Memory.alloc 1")
+        self.instructions.append("pop pointer 0")
+        args = len(value)
+        self.push_args(args)
+        for token in body.value:
+            if token.type == "CREATE_STMT":
+                crate_stmt = token.value
+                if len(crate_stmt) == 4:
+                    expr = crate_stmt[3]
+                    self.generate_expression(expr)
+                self.pop_symbol("this " + str(args))
+                args += 1
+
+
+
+
+
+    def push_args(self, args):
+        for i in range(args):
+            self.push_symbol(f"argument {i}")
+            self.pop_symbol(f"this {i}")
+
 
 
 
