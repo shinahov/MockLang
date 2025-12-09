@@ -236,6 +236,18 @@ class VMGenerator:
                 fn_call = statement.value
                 self.generate_function_call(fn_call)
                 self.pop_symbol("temp 0")
+            elif statement.type == "LOOP_STMT":
+                assert statement.value.type == "LOOP_BODY"
+                loop_body = statement.value
+                assert len(loop_body.value) == 4
+                assert loop_body.value[0].type == "IDENT"
+                loop_var = loop_body.value[0].value
+                assert loop_body.value[1].type == "START_EXPR"
+                start_expr = loop_body.value[1].value
+                assert loop_body.value[2].type == "END_EXPR"
+                end_expr = loop_body.value[2].value
+                body_stmt = loop_body.value[3]
+                self.generate_loop_statement(loop_var, start_expr, end_expr, body_stmt, method_name)
         self.symbol_table_manager.exit_scope()
 
 
@@ -248,8 +260,8 @@ class VMGenerator:
             expr = set_stmt[2].value
             self.generate_expression(expr)
             if calss_var.type == "IDENT":
-                pass
-                #todo
+                pass # TODO for other cases
+
             elif calss_var.type == "SELF":
                 slot = self.symbol_table_manager.lookup(var.value)
                 while slot.type != ST.SymbolType.FIELD:
@@ -283,6 +295,7 @@ class VMGenerator:
 
 
     def generate_if_statement(self, if_stmt):
+        label_id = self.get_new_label_id()
         Parser.pretty_print(if_stmt)
         if_token = if_stmt.value[1]
         print("if token", if_token)
@@ -308,16 +321,16 @@ class VMGenerator:
             self.instructions.append("gt")
         else:
             raise Exception(f"Unsupported comparator '{comp}' in if statement")
-        self.instructions.append("if-goto IF_TRUE" + str(self.goto_count))
-        self.instructions.append("goto IF_FALSE" + str(self.goto_count))
-        self.instructions.append("label IF_TRUE" + str(self.goto_count))
+        self.instructions.append("if-goto IF_TRUE" + str(label_id))
+        self.instructions.append("goto IF_FALSE" + str(label_id))
+        self.instructions.append("label IF_TRUE" + str(label_id))
         self.generate_statmen(if_token)
         if else_token is not None:
-            self.instructions.append("goto IF_END" + str(self.goto_count))
-            self.instructions.append("label IF_FALSE" + str(self.goto_count))
+            self.instructions.append("goto IF_END" + str(label_id))
+            self.instructions.append("label IF_FALSE" + str(label_id))
             self.generate_statmen(else_token)
-            self.instructions.append("label IF_END" + str(self.goto_count))
-        self.goto_count += 1
+            self.instructions.append("label IF_END" + str(label_id))
+        #label_id = self.get_new_label_id()
 
     def generate_function_call(self, fn_call):
         name = fn_call[0].value
@@ -365,7 +378,7 @@ class VMGenerator:
 
     def generate_statmen(self, if_token):
         for statement in if_token:
-            #print(statement)
+            print("statment ", statement)
             if statement.type == "SET_STMT":
                 set_stmt = statement.value
                 self.generate_set_statement(set_stmt, "")
@@ -423,6 +436,35 @@ class VMGenerator:
             return symbol.data_type
         else:
             raise Exception(f"Unsupported expression type '{expr.type}' for type inference")
+
+    def generate_loop_statement(self, loop_var, start_expr, end_expr, body_stmt, method_name):
+        self.symbol_table_manager.define(
+            loop_var,
+            ST.SymbolType.VARIABLE,
+            "int",
+            Tokenizer.Token("IDENT", loop_var),
+            slot=len(self.symbol_table_manager.table.symbols)
+        )
+        index = self.symbol_table_manager.lookup(loop_var).slot
+
+        loop_id = self.get_new_label_id()
+        self.generate_expression(start_expr)
+        self.pop_symbol(f"local {index}")
+        self.instructions.append(f"label LOOP_START{loop_id}")
+        self.push_symbol(f"local {index}")
+        self.generate_expression(end_expr)
+        self.instructions.append("lt")
+        self.instructions.append(f"if-goto LOOP_BODY{loop_id}")
+        self.instructions.append(f"goto LOOP_END{loop_id}")
+        self.instructions.append(f"label LOOP_BODY{loop_id}")
+        self.generate_statmen(body_stmt.value)
+        self.instructions.append(f"goto LOOP_START{loop_id}")
+        self.instructions.append(f"label LOOP_END{loop_id}")
+
+    def get_new_label_id(self):
+        current_id = self.goto_count
+        self.goto_count += 1
+        return current_id
 
 
 

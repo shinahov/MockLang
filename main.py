@@ -40,6 +40,7 @@ code = """class Ball [radius:int, x:int, y:int, speed:float]:
     }
     loop(i, (0; 3;)){
         print(i);
+        set i to (i + 1);
     }
     create int b;
     set b to 5;
