@@ -23,7 +23,7 @@ class VMGenerator:
         assert self.program[2].type == "BODY"
         body = self.program[2]
         self.constructor_generator(self.program[1].value, body)
-        result = self.generate_class_body(body)
+        self.generate_class_body(body)
 
     def generate_class_body(self, body):
         for statement in body.value:
@@ -44,12 +44,15 @@ class VMGenerator:
                 self.generate_function(body)
             elif statement.type == "CREATE_STMT":
                 pass
+            else:
+                raise Exception(f"Unsupported statement type '{statement.type}' in class body")
             #return None
 
     def generate_method(self, methode):
         name = methode[0].value
         local_count = self.symbol_table_manager.count_vars(name)
         self.instructions.append(f"function {self.class_name}.{name} {local_count}")
+        #push self pointer
         self.push_symbol("argument 0")
         self.pop_symbol("pointer 0")
         #print(self.instructions)
@@ -68,7 +71,20 @@ class VMGenerator:
 
 
     def generate_function(self, body):
-        pass
+        name = body[0].value
+        local_count = self.symbol_table_manager.count_vars(name)
+        self.instructions.append(f"function {self.class_name}.{name} {local_count}")
+        assert body[3].type == "BODY"
+        fn_body = body[3]
+        assert body[1].type == "ARGS"
+        assert body[2].type == "RETURN_TYPE"
+        return_types = body[2].value
+        self.generate_method_body(fn_body, name)
+        #print("return types", return_types)
+        if len(return_types) == 1 and return_types[0].type == "TYPE_VOID":
+            self.instructions.append("push constant 0")
+            self.instructions.append("return")
+
 
     def generate_create_statement(self, crate_stmt):
         if len(crate_stmt) == 4:
@@ -201,7 +217,7 @@ class VMGenerator:
 
     def constructor_generator(self, value, body):
         field_count = self.symbol_table_manager.table.length()
-        self.instructions.append(f"function {self.class_name}.<init> 0")
+        self.instructions.append(f"function {self.class_name}.new 0")
         self.instructions.append(f"push constant {field_count}")
         self.instructions.append("call Memory.alloc 1")
         self.instructions.append("pop pointer 0")
