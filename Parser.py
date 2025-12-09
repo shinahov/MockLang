@@ -306,10 +306,7 @@ class Parser:
             if self.token.type == "SEMI":
                 self.pop()
             if self.token.type == "LOOP":
-                while self.token.type != "RBRACE":
-                    print(self.token)
-                    self.pop()
-                self.pop()  # consume RBRACE
+                body.append(Token("LOOP_STMT", self.parse_loop_stmt()))
             if self.token.type == "CLASS":
                 raise NotImplementedError("Nested classes are not supported yet")
         return body
@@ -441,4 +438,35 @@ class Parser:
             if self.token.type == "CLASS":
                 raise NotImplementedError("Nested classes are not supported yet")
         return body
+
+    def parse_loop_stmt(self):
+        self.pop()  # consume LOOP
+        assert self.token.type == "LP"
+        self.pop()  # consume LP
+        iterator = self.token
+        assert iterator.type == "IDENT"
+        self.pop()  # consume IDENT
+        assert self.token.type == "COMMA"
+        self.pop()  # consume COMMA
+        assert self.token.type == "LP"
+        self.pop()  # consume LP
+        start_expr = self.parse_expression()
+        assert self.token.type == "SEMI"
+        self.pop()  # consume COMMA
+        end_expr = self.parse_expression()
+        assert self.token.type == "SEMI"
+        self.pop()
+        assert self.token.type == "RP"
+        self.pop()  # consume RP
+        assert self.token.type == "RP"
+        self.pop()  # consume RP
+        assert self.token.type == "LBRACE"
+        self.pop()  # consume LBRACE
+        body = self.parse_if_else_body()
+        assert self.token.type == "RBRACE"
+        self.pop()  # consume RBRACE
+        return Token("LOOP_BODY", [iterator,
+                                   Token("START_EXPR", start_expr),
+                                   Token("END_EXPR", end_expr),
+                                   Token("BODY", body)])
 

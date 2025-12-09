@@ -38,7 +38,7 @@ code = """class Ball [radius:int, x:int, y:int, speed:float]:
     } else {
       print(0);
     }
-    loop(int i,(0, 3)){
+    loop(i, (0; 3;)){
         print(i);
     }
     create int b;
