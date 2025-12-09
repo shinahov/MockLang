@@ -62,7 +62,7 @@ class VMGenerator:
         assert methode[2].type == "RETURN_TYPE"
         return_types = methode[2].value
         self.generate_method_body(body, name)
-        print("return types", return_types)
+        #print("return types", return_types)
         if len(return_types) == 1 and return_types[0].type == "TYPE_VOID":
             self.instructions.append("push constant 0")
             self.instructions.append("return")
@@ -115,8 +115,68 @@ class VMGenerator:
 
     def generate_expression(self, expr):
         if len(expr.value) == 1:
-            print("single value expression", expr.value[0])
+            print("single value expression", expr)
             self.write_value(expr.value[0])
+        elif len(expr.value) == 3:
+            print("three part expression", expr)
+            if expr.value[1].type == "OPERATOR":
+                left = expr.value[0]
+                operator = expr.value[1].value
+                right = expr.value[2]
+                self.generate_expression(left)
+                self.generate_expression(right)
+                if operator == "+":
+                    self.instructions.append("add")
+                elif operator == "-":
+                    self.instructions.append("sub")
+                elif operator == "*":
+                    self.instructions.append("call Math.multiply 2")
+                elif operator == "/":
+                    self.instructions.append("call Math.divide 2")
+                else:
+                    raise Exception(f"Unsupported operator '{operator}' in expression")
+            elif expr.value[1].type == "COMPERATOR":
+                left = expr.value[0]
+                comparator = expr.value[1].value
+                right = expr.value[2]
+                self.generate_expression(left)
+                self.generate_expression(right)
+                if comparator == "=?":
+                    self.instructions.append("eq")
+                elif comparator == "<":
+                    self.instructions.append("lt")
+                elif comparator == ">":
+                    self.instructions.append("gt")
+                else:
+                    raise Exception(f"Unsupported comparator '{comparator}' in expression")
+            elif expr.value[1].type == "DOT":
+                #method call or variable access
+                left = expr.value[0]
+                right = expr.value[2]
+                if right.type == "FN_CALL":
+                    fn_call = right.value
+                    fn_name = fn_call[0].value
+                    args = fn_call[1].value
+                    #push the object pointer
+                    self.generate_expression(Tokenizer.Token("EXPR", [left]))
+                    for arg in args:
+                        self.generate_expression(arg)
+                    self.instructions.append(f"call {self.class_name}.{fn_name} {len(args)+1}")
+                elif right.type == "IDENT":
+                    var_name = right.value
+                    #push the object pointer
+                    self.generate_expression(Tokenizer.Token("EXPR", [left]))
+                    slot = self.symbol_table_manager.lookup(var_name)
+                    if slot is None:
+                        raise Exception(f"Undefined variable '{var_name}'")
+                    if slot.type != ST.SymbolType.FIELD:
+                        raise Exception(f"Variable '{var_name}' is not a field")
+                    self.instructions.append(f"push this {slot.slot}")
+        else:
+            print("complex expression", expr)
+            raise Exception("Complex expressions are not supported yet expr: ")
+
+
 
     def write_value(self, param):
         if param.type == "INT":
@@ -140,7 +200,7 @@ class VMGenerator:
     def generate_method_body(self, body, method_name):
         self.symbol_table_manager.enter_scope_for_lookup(method_name)
         for statement in body.value:
-            print(statement)
+            #print(statement)
             if statement.type == "SET_STMT":
                 set_stmt = statement.value
                 self.generate_set_statement(set_stmt, method_name)
@@ -154,6 +214,7 @@ class VMGenerator:
                 crate_stmt = statement.value
                 self.generate_create_statement(crate_stmt)
             elif statement.type == "IF_STMT":
+                #print(statement)
                 if_stmt = statement.value
                 self.generate_if_statement(if_stmt)
             elif statement.type == "FN_CALL":
@@ -180,7 +241,7 @@ class VMGenerator:
                     self.symbol_table_manager.exit_scope()
                     slot = self.symbol_table_manager.lookup(var.value)
                 self.symbol_table_manager.enter_scope_for_lookup(method_name)
-                print(self.symbol_table_manager.table.symbols)
+                #print(self.symbol_table_manager.table.symbols)
                 self.pop_symbol(f"this {slot.slot}")
 
 
@@ -193,7 +254,7 @@ class VMGenerator:
 
     def generate_return_statement(self, return_stmt):
         for expr in return_stmt:
-            print("expressions in return", expr)
+            #print("expressions in return", expr)
             if len(expr) == 1:
                 self.write_value(expr[0])
             elif len(expr) == 2:
@@ -207,8 +268,25 @@ class VMGenerator:
 
 
     def generate_if_statement(self, if_stmt):
-        pass
-
+        print(if_stmt)
+        assert if_stmt.value[0].type == "EXPR"
+        condition = if_stmt.value[0]
+        tokens = condition.value
+        for i, token in enumerate(tokens):
+            if token.type == "COMPERATOR":
+                left = tokens[:i]
+                right = tokens[i+1:]
+                comp = token.value
+        self.generate_expression(Tokenizer.Token("EXPR", left))
+        self.generate_expression(Tokenizer.Token("EXPR", right))
+        if comp == "=?":
+            self.instructions.append("eq")
+        elif comp == "<":
+            self.instructions.append("lt")
+        elif comp == ">":
+            self.instructions.append("gt")
+        else:
+            raise Exception(f"Unsupported comparator '{comp}' in if statement")
     def generate_function_call(self, fn_call):
         name = fn_call[0].value
         args = fn_call[1].value
@@ -250,7 +328,8 @@ class VMGenerator:
             self.pop_symbol(f"this {i}")
 
     def return_statment(self, expr):
-        print(expr)
+        pass
+        #print(expr)
 
 
 
