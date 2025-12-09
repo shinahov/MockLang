@@ -10,6 +10,7 @@ class VMGenerator:
         self.program = program
         self.instructions = []
         self.class_name = ""
+        self.goto_count = 0
 
     def generate(self):
         self.generate_class()
@@ -114,15 +115,27 @@ class VMGenerator:
         return (f"{segment} {symbol.slot}")
 
     def generate_expression(self, expr):
-        if len(expr.value) == 1:
-            print("single value expression", expr)
-            self.write_value(expr.value[0])
-        elif len(expr.value) == 3:
-            print("three part expression", expr)
-            if expr.value[1].type == "OPERATOR":
-                left = expr.value[0]
-                operator = expr.value[1].value
-                right = expr.value[2]
+        print("generating expression", expr)
+
+        if isinstance(expr, Tokenizer.Token) and expr.type == "TERM":
+            return self.generate_expression(expr.value)
+        if not (isinstance(expr, Tokenizer.Token) and expr.type == "EXPR"):
+            return self.write_value(expr)
+
+
+        parts = expr.value
+        if len(parts) == 1:
+            single = parts[0]
+            if isinstance(single, Tokenizer.Token) and single.type in ("EXPR", "TERM"):
+                return self.generate_expression(single)
+            else:
+                return self.write_value(single)
+
+        if len(parts) == 3:
+            left, middle, right = parts
+
+            if middle.type == "OPERATOR":
+                operator = middle.value
                 self.generate_expression(left)
                 self.generate_expression(right)
                 if operator == "+":
@@ -135,10 +148,10 @@ class VMGenerator:
                     self.instructions.append("call Math.divide 2")
                 else:
                     raise Exception(f"Unsupported operator '{operator}' in expression")
-            elif expr.value[1].type == "COMPERATOR":
-                left = expr.value[0]
-                comparator = expr.value[1].value
-                right = expr.value[2]
+
+            # COMPARATOR: =? < > ...
+            elif middle.type == "COMPERATOR":
+                comparator = middle.value
                 self.generate_expression(left)
                 self.generate_expression(right)
                 if comparator == "=?":
@@ -149,34 +162,36 @@ class VMGenerator:
                     self.instructions.append("gt")
                 else:
                     raise Exception(f"Unsupported comparator '{comparator}' in expression")
-            elif expr.value[1].type == "DOT":
-                #method call or variable access
-                left = expr.value[0]
-                right = expr.value[2]
+
+            elif middle.type == "DOT":
                 if right.type == "FN_CALL":
                     fn_call = right.value
                     fn_name = fn_call[0].value
                     args = fn_call[1].value
-                    #push the object pointer
-                    self.generate_expression(Tokenizer.Token("EXPR", [left]))
+                    self.generate_expression(left)
                     for arg in args:
                         self.generate_expression(arg)
-                    self.instructions.append(f"call {self.class_name}.{fn_name} {len(args)+1}")
+                    self.instructions.append(f"call {self.class_name}.{fn_name} {len(args) + 1}")
+
                 elif right.type == "IDENT":
                     var_name = right.value
-                    #push the object pointer
-                    self.generate_expression(Tokenizer.Token("EXPR", [left]))
+                    self.generate_expression(left)
                     slot = self.symbol_table_manager.lookup(var_name)
                     if slot is None:
                         raise Exception(f"Undefined variable '{var_name}'")
                     if slot.type != ST.SymbolType.FIELD:
                         raise Exception(f"Variable '{var_name}' is not a field")
                     self.instructions.append(f"push this {slot.slot}")
-        else:
-            print("complex expression", expr)
-            raise Exception("Complex expressions are not supported yet expr: ")
+                else:
+                    raise Exception(f"Unsupported right side of DOT: {right}")
 
+            else:
+                raise Exception(f"Unsupported middle token in expression: {middle}")
 
+            return
+
+        print("complex expression", expr)
+        raise Exception("Complex expressions are not supported yet expr: " + repr(expr))
 
     def write_value(self, param):
         if param.type == "INT":
@@ -249,7 +264,7 @@ class VMGenerator:
     def generate_print_statement(self, print_stmt):
         expr = print_stmt
         self.generate_expression(expr)
-        type = self.symbol_table_manager.lookup(expr.value[0].value).data_type
+        type = self.infer_type(expr)
         self.instructions.append(f"call print.{type} 1")
 
     def generate_return_statement(self, return_stmt):
@@ -268,7 +283,13 @@ class VMGenerator:
 
 
     def generate_if_statement(self, if_stmt):
-        print(if_stmt)
+        Parser.pretty_print(if_stmt)
+        if_token = if_stmt.value[1]
+        print("if token", if_token)
+        else_token = None
+        if if_stmt.type == "IF_ELSE_STMT":
+            else_token = if_stmt.value[2]
+            print("else token", else_token)
         assert if_stmt.value[0].type == "EXPR"
         condition = if_stmt.value[0]
         tokens = condition.value
@@ -287,6 +308,17 @@ class VMGenerator:
             self.instructions.append("gt")
         else:
             raise Exception(f"Unsupported comparator '{comp}' in if statement")
+        self.instructions.append("if-goto IF_TRUE" + str(self.goto_count))
+        self.instructions.append("goto IF_FALSE" + str(self.goto_count))
+        self.instructions.append("label IF_TRUE" + str(self.goto_count))
+        self.generate_statmen(if_token)
+        if else_token is not None:
+            self.instructions.append("goto IF_END" + str(self.goto_count))
+            self.instructions.append("label IF_FALSE" + str(self.goto_count))
+            self.generate_statmen(else_token)
+            self.instructions.append("label IF_END" + str(self.goto_count))
+        self.goto_count += 1
+
     def generate_function_call(self, fn_call):
         name = fn_call[0].value
         args = fn_call[1].value
@@ -330,6 +362,67 @@ class VMGenerator:
     def return_statment(self, expr):
         pass
         #print(expr)
+
+    def generate_statmen(self, if_token):
+        for statement in if_token:
+            #print(statement)
+            if statement.type == "SET_STMT":
+                set_stmt = statement.value
+                self.generate_set_statement(set_stmt, "")
+            elif statement.type == "PRINT_STMT":
+                print_stmt = statement.value
+                self.generate_print_statement(print_stmt)
+            elif statement.type == "RETURN_STMT":
+                return_stmt = statement.value
+                self.generate_return_statement(return_stmt)
+            elif statement.type == "CREATE_STMT":
+                crate_stmt = statement.value
+                self.generate_create_statement(crate_stmt)
+            elif statement.type == "FN_CALL":
+                fn_call = statement.value
+                self.generate_function_call(fn_call)
+                self.pop_symbol("temp 0")
+        #self.instructions.append("label IF_FALSE" + str(self.goto_count))
+
+
+    def infer_type(self, expr):
+        if expr.type == "TERM":
+            return self.infer_type(expr.value)
+
+        if expr.type == "EXPR":
+            parts = expr.value
+            if len(parts) == 1:
+                return self.infer_type(parts[0])
+            elif len(parts) == 3:
+                left, middle, right = parts
+                if middle.type == "OPERATOR":
+                    left_type = self.infer_type(left)
+                    right_type = self.infer_type(right)
+                    if left_type == "float" or right_type == "float":
+                        return "float"
+                    else:
+                        return "int"
+                elif middle.type == "COMPERATOR":
+                    return "int"
+                elif middle.type == "DOT":
+                    return self.infer_type(right)
+            raise Exception(f"Cannot infer type for complex expression: {expr}")
+        return self.get_instance_type(expr)
+
+    def get_instance_type(self, expr):
+        if expr.type == "INT":
+            return "int"
+        elif expr.type == "FLOAT":
+            return "float"
+        elif expr.type == "STRING":
+            return "String"
+        elif expr.type == "IDENT":
+            symbol = self.symbol_table_manager.lookup(expr.value)
+            if symbol is None:
+                raise Exception(f"Undefined variable '{expr.value}'")
+            return symbol.data_type
+        else:
+            raise Exception(f"Unsupported expression type '{expr.type}' for type inference")
 
 
 
