@@ -22,6 +22,7 @@ class Tokenizer:
         "print": "PRINT",
         "int": "TYPE_INT",
         "float": "TYPE_FLOAT",
+        "String": "TYPE_STRING",
         "class": "CLASS",
         "end": "END",
         "to": "TO",
@@ -95,7 +96,20 @@ class Tokenizer:
                 else:
                     tokens.append(Token("INT", int(number)))
                 continue
+            if code[i] == '"':
+                i += 1
+                start = i
+                while i < len(code) and code[i] != '"':
+                    i += 1
+                if i >= len(code):
+                    print(f"Error: unterminated string starting at position {start-1}")
+                    break
+                string_value = code[start:i]
+                tokens.append(Token("STRING", string_value))
+                i += 1
+                continue
             print(f"Error: unrecognized character '{code[i]}' at position {i}")
+
 
             i += 1
         tokens.append(Token("EOF", None))

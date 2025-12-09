@@ -123,6 +123,8 @@ class VMGenerator:
             self.instructions.append(f"push constant {param.value}")
         elif param.type == "FLOAT":
             self.instructions.append(f"push constant {param.value}")
+        elif param.type == "STRING":
+            self.instructions.append(f'push string "{param.value}"')
         elif param.type == "IDENT":
             symbol = self.parse_symbol(param.value)
             self.instructions.append(f"push {symbol}")
@@ -184,7 +186,10 @@ class VMGenerator:
 
 
     def generate_print_statement(self, print_stmt):
-        pass
+        expr = print_stmt
+        self.generate_expression(expr)
+        type = self.symbol_table_manager.lookup(expr.value[0].value).data_type
+        self.instructions.append(f"call print.{type} 1")
 
     def generate_return_statement(self, return_stmt):
         for expr in return_stmt:

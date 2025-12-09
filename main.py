@@ -31,6 +31,8 @@ code = """class Ball [radius:int, x:int, y:int, speed:float]:
     create int c;
     create float pi = 3.14;
     print(pi);
+    create String text = "Hello World!";
+    print(text);
     if(z > 5){
       print((z+5)*2);
     } else {
