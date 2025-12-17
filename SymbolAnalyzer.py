@@ -43,6 +43,21 @@ class SymbolAnalyzer:
                     slot=var_slots
                 )
                 var_slots += 1
+            elif statement.type == "LOOP_STMT":
+                loop_body = statement.value
+                assert loop_body.type == "LOOP_BODY"
+                assert loop_body.value[0].type == "IDENT"
+                loop_var_tok = loop_body.value[0]
+                loop_var = loop_var_tok.value
+                if self.symbol_table_manager.table.lookup(loop_var) is None:
+                    self.symbol_table_manager.define(
+                        loop_var,
+                        SymbolType.VARIABLE,
+                        "int",
+                        loop_var_tok,
+                        slot=var_slots
+                    )
+                    var_slots += 1
             #print("Symbol Table after analysing statement:")
             #print(self.symbol_table_manager.table)
 
@@ -128,6 +143,21 @@ class SymbolAnalyzer:
                     slot=var_slots
                 )
                 var_slots += 1
+            elif statement.type == "LOOP_STMT":
+                loop_body = statement.value
+                assert loop_body.type == "LOOP_BODY"
+                assert loop_body.value[0].type == "IDENT"
+                loop_var_tok = loop_body.value[0]
+                loop_var = loop_var_tok.value
+                if self.symbol_table_manager.table.lookup(loop_var) is None:
+                    self.symbol_table_manager.define(
+                        loop_var,
+                        SymbolType.VARIABLE,
+                        "int",
+                        loop_var_tok,
+                        slot=var_slots
+                    )
+                    var_slots += 1
 
     def analyze_function(self, FN_body):
         name = FN_body[0].value

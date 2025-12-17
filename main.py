@@ -88,7 +88,9 @@ def let_test():
     analyzer.analyze()
     print("Final Symbol Table:")
 
-    print(table.table)
+    print(table.dump())  # nur scopes + symbols
+    print(table.dump(show_node=True))  # zusätzlich node-typen
+
     vm_generator = VM.VMGenerator(table, programm)
     instructions = vm_generator.generate()
     print("Generated VM Instructions:")

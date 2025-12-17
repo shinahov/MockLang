@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum, auto
+from typing import Optional
 
 
 class SymbolType(Enum):
@@ -88,4 +89,42 @@ class SymbolTableManager:
                     if symbol.type == SymbolType.VARIABLE:
                         count += 1
         return count
+
+    def dump(self, root: Optional[SymbolTable] = None, show_node: bool = False) -> str:
+
+        # pretty-print the whole symbol table tree (scopes + symbols).
+        # returns a string (so you can print() it or write to file).
+        if root is None:
+            root = self._get_root()
+
+        lines = []
+        self._dump_table(root, lines, indent=0, show_node=show_node)
+        return "\n".join(lines)
+
+    def _get_root(self) -> SymbolTable:
+        t = self.table
+        while t.parent is not None:
+            t = t.parent
+        return t
+
+    def _dump_table(self, table: SymbolTable, out: list[str], indent: int, show_node: bool):
+        pad = "  " * indent
+        out.append(f"{pad}Scope: {table.name}")
+
+        if not table.symbols:
+            out.append(f"{pad}  (no symbols)")
+        else:
+            out.append(f"{pad}  Symbols:")
+            for sym in sorted(table.symbols.values(),
+                              key=lambda s: (s.type.name, s.slot if s.slot is not None else 10 ** 9, s.name)):
+                slot_str = "-" if sym.slot is None else str(sym.slot)
+                node_str = ""
+                if show_node:
+                    node_str = f"  node={type(sym.node).__name__}"
+                out.append(f"{pad}    {sym.name:<12} {sym.type.name:<8} {sym.data_type:<10} slot={slot_str}{node_str}")
+
+        if table.children:
+            out.append(f"{pad}  Children:")
+            for child in table.children:
+                self._dump_table(child, out, indent + 1, show_node=show_node)
 

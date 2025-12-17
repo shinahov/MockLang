@@ -115,7 +115,7 @@ class VMGenerator:
         return (f"{segment} {symbol.slot}")
 
     def generate_expression(self, expr):
-        print("generating expression", expr)
+        #print("generating expression", expr)
 
         if isinstance(expr, Tokenizer.Token) and expr.type == "TERM":
             return self.generate_expression(expr.value)
@@ -190,7 +190,7 @@ class VMGenerator:
 
             return
 
-        print("complex expression", expr)
+        #print("complex expression", expr)
         raise Exception("Complex expressions are not supported yet expr: " + repr(expr))
 
     def write_value(self, param):
@@ -298,11 +298,11 @@ class VMGenerator:
         label_id = self.get_new_label_id()
         Parser.pretty_print(if_stmt)
         if_token = if_stmt.value[1]
-        print("if token", if_token)
+        #print("if token", if_token)
         else_token = None
         if if_stmt.type == "IF_ELSE_STMT":
             else_token = if_stmt.value[2]
-            print("else token", else_token)
+            #print("else token", else_token)
         assert if_stmt.value[0].type == "EXPR"
         condition = if_stmt.value[0]
         tokens = condition.value
@@ -378,7 +378,7 @@ class VMGenerator:
 
     def generate_statmen(self, if_token):
         for statement in if_token:
-            print("statment ", statement)
+            #print("statment ", statement)
             if statement.type == "SET_STMT":
                 set_stmt = statement.value
                 self.generate_set_statement(set_stmt, "")
@@ -438,13 +438,6 @@ class VMGenerator:
             raise Exception(f"Unsupported expression type '{expr.type}' for type inference")
 
     def generate_loop_statement(self, loop_var, start_expr, end_expr, body_stmt, method_name):
-        self.symbol_table_manager.define(
-            loop_var,
-            ST.SymbolType.VARIABLE,
-            "int",
-            Tokenizer.Token("IDENT", loop_var),
-            slot=len(self.symbol_table_manager.table.symbols)
-        )
         index = self.symbol_table_manager.lookup(loop_var).slot
 
         loop_id = self.get_new_label_id()
