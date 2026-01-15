@@ -265,6 +265,10 @@ class VMGenerator:
                 fn_call = statement.value
                 self.generate_function_call(fn_call)
                 self.pop_symbol("temp 0")
+            elif statement.type == "CLASS_METHOD_CALL":
+                assert len(statement.value) == 3
+                class_call = statement.value
+                self.generate_method_call(class_call)
             elif statement.type == "LOOP_STMT":
                 assert statement.value.type == "LOOP_BODY"
                 loop_body = statement.value
@@ -380,12 +384,7 @@ class VMGenerator:
     def generate_function_call(self, fn_call):
         name = fn_call[0].value
         args = fn_call[1].value
-        for arg in args:
-            if arg.type == "INT" or arg.type == "FLOAT":
-                self.instructions.append(f"push constant {arg.value}")
-            elif arg.type == "IDENT":
-                symbol = self.parse_symbol(arg.value)
-                self.instructions.append(f"push {symbol}")
+        self.push_arguments(args)
         self.instructions.append(f"call {name} {len(args)}")
 
     def constructor_generator(self, value, body):
@@ -514,6 +513,21 @@ class VMGenerator:
         else:
             raise Exception(f"Unsupported symbol type for '{slot.name}'")
         self.pop_symbol(f"{segment} {slot.slot}")
+
+    def generate_method_call(self, class_call):
+        class_instance = (self.symbol_table_manager.lookup(class_call[0].value)).data_type
+        args = class_call[2].value
+        self.push_arguments(args)
+        self.instructions.append(f"call {class_instance}.{class_call[1].value} "
+                                 f"{len(args) + 1}")
+
+    def push_arguments(self, args):
+        for arg in args:
+            if arg.type == "INT" or arg.type == "FLOAT":
+                self.instructions.append(f"push constant {arg.value}")
+            elif arg.type == "IDENT":
+                symbol = self.parse_symbol(arg.value)
+                self.instructions.append(f"push {symbol}")
 
 
 
