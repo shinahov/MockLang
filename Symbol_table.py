@@ -36,6 +36,7 @@ class SymbolTable:
         return symbol
 
     def lookup(self, name):
+        print("Looking up", name, "in scope", self.name)
         if name in self.symbols:
             return self.symbols[name]
         elif self.parent:

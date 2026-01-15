@@ -193,7 +193,9 @@ class Parser:
                         self.pop() # consume COMMA
                     if self.token.type == "TO":
                         self.pop() # consume TO
-                        buffer.append(Token("TO", self.parse_expression()))
+                        print()
+                        buffer = [Token("MULTI_IDENT_SET", buffer),
+                                  Token("TO", self.parse_ident())]
 
         #print("SET_STMT parsed:", buffer)
         return buffer
@@ -246,9 +248,8 @@ class Parser:
             assert self.token.type == "RP"
             self.pop() # consume )
             assert self.token.type == "SEMI"
-            return (Token("CLASS_METHOD_CALL", [Token("CLASS", name),
-                                                method_name,
-                                                Token("ARGS", args)]))
+            return self.method_call_handler(name, method_name, args)
+
         elif self.token.type == "LP":
             self.pop() # consume (
             buffer = self.parse_args()
@@ -469,4 +470,10 @@ class Parser:
                                    Token("START_EXPR", start_expr),
                                    Token("END_EXPR", end_expr),
                                    Token("BODY", body)])
+
+
+    def method_call_handler(self, name, method_name, args):
+        return (Token("CLASS_METHOD_CALL", [Token("CLASS", name),
+                                     method_name,
+                                     Token("ARGS", args)]))
 

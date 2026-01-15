@@ -93,7 +93,7 @@ class VMGenerator:
             var_name = crate_stmt[1].value
             symbol = self.parse_symbol(var_name)
             assert crate_stmt[2].type == "EQ"
-            print("var type  ", var_type)
+            #print("var type  ", var_type)
             expr = crate_stmt[3]
             self.generate_expression(expr)
             self.pop_symbol(symbol)
@@ -144,11 +144,16 @@ class VMGenerator:
         return (f"{segment} {symbol.slot}")
 
     def generate_expression(self, expr):
-        #print("generating expression", expr)
+        print("generating expression", expr)
 
         if isinstance(expr, Tokenizer.Token) and expr.type == "TERM":
             return self.generate_expression(expr.value)
-        if not (isinstance(expr, Tokenizer.Token) and expr.type == "EXPR"):
+        elif expr.type == "CLASS_METHOD_CALL":
+            class_call = expr.value
+            return self.generate_method_call(class_call)
+
+        elif not (isinstance(expr, Tokenizer.Token) and expr.type == "EXPR"):
+            print("expr type:", expr.type)
             return self.write_value(expr)
 
 
@@ -159,9 +164,10 @@ class VMGenerator:
                 return self.generate_expression(single)
             else:
                 return self.write_value(single)
-
+        print("expression parts!!!!!!!!!:    ", parts)
         if len(parts) == 3:
             left, middle, right = parts
+            print("complex expression parts:", left, middle, right)
 
             if middle.type == "OPERATOR":
                 operator = middle.value
@@ -218,6 +224,10 @@ class VMGenerator:
                 raise Exception(f"Unsupported middle token in expression: {middle}")
 
             return
+
+        elif len(parts) == 4:
+            self.generate_method_call(parts)
+
 
         #print("complex expression", expr)
         raise Exception("Complex expressions are not supported yet expr: " + repr(expr))
@@ -286,9 +296,9 @@ class VMGenerator:
 
 
     def generate_set_statement(self, set_stmt, method_name):
-        print("set statement:")
-        Parser.pretty_print(set_stmt)
-        print("len of set statement", len(set_stmt))
+        #print("set statement:")
+        #Parser.pretty_print(set_stmt)
+        #print("len of set statement", len(set_stmt))
         if len(set_stmt) == 3:
             calss_var = set_stmt[0]
             var = set_stmt[1]
@@ -312,9 +322,14 @@ class VMGenerator:
             assert set_stmt[1].type == "TO"
             expr = set_stmt[1].value
             self.generate_expression(expr)
-            slot = self.symbol_table_manager.lookup(var.value)
-            print(slot)
-            self.pop_slot(slot)
+            if var.type == "MULTI_IDENT_SET":
+                self.handle_multi_set(var)
+            else:
+                slot = self.symbol_table_manager.lookup(var.value)
+                if slot is None:
+                    raise Exception(f"Undefined variable '{var.value}'")
+                self.pop_slot(slot)
+
             #self.pop_symbol(f"local {slot.slot}")
 
 
@@ -515,6 +530,7 @@ class VMGenerator:
         self.pop_symbol(f"{segment} {slot.slot}")
 
     def generate_method_call(self, class_call):
+        print("class call:", class_call)
         class_instance = (self.symbol_table_manager.lookup(class_call[0].value)).data_type
         args = class_call[2].value
         self.push_arguments(args)
@@ -528,6 +544,15 @@ class VMGenerator:
             elif arg.type == "IDENT":
                 symbol = self.parse_symbol(arg.value)
                 self.instructions.append(f"push {symbol}")
+
+    def handle_multi_set(self, var):
+        identifiers = var.value
+        for ident in identifiers:
+            slot = self.symbol_table_manager.lookup(ident.value)
+            if slot is None:
+                raise Exception(f"Undefined variable '{ident.value}'")
+            self.pop_slot(slot)
+
 
 
 
