@@ -15,6 +15,7 @@ code = """class Ball [radius:int, x:int, y:int, speed:float]:
   end
 
   setBall(r:int, x:int) -> :
+    set r to 55;
     set self.radius to r;
     set self.x to x;
   end 
@@ -78,7 +79,7 @@ class Compiler:
 
 def let_test():
     tokens = Tokenizer.Tokenizer().tokenize(code)
-    print("Tokens:", tokens)
+    #print("Tokens:", tokens)
     parser = Parser.Parser(tokens)
     programm = parser.parse()
     print("Programm:")
@@ -86,10 +87,10 @@ def let_test():
     table = ST.SymbolTableManager()
     analyzer = SA.SymbolAnalyzer(table, programm)
     analyzer.analyze()
-    print("Final Symbol Table:")
+    #print("Final Symbol Table:")
 
-    print(table.dump())  # nur scopes + symbols
-    print(table.dump(show_node=True))  # zusätzlich node-typen
+    #print(table.dump())  # nur scopes + symbols
+    #print(table.dump(show_node=True))  # zusätzlich node-typen
 
     vm_generator = VM.VMGenerator(table, programm)
     instructions = vm_generator.generate()

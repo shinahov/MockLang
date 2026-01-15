@@ -93,9 +93,38 @@ class VMGenerator:
             var_name = crate_stmt[1].value
             symbol = self.parse_symbol(var_name)
             assert crate_stmt[2].type == "EQ"
+            print("var type  ", var_type)
             expr = crate_stmt[3]
             self.generate_expression(expr)
             self.pop_symbol(symbol)
+        if len(crate_stmt) == 2:
+            var_type = crate_stmt[0].value
+            var_name = crate_stmt[1].value
+            symbol = self.parse_symbol(var_name)
+            if var_type == "int":
+                self.instructions.append("push constant 0")
+            elif var_type == "float":
+                self.instructions.append("push constant 0.0")
+            elif var_type == "String":
+                self.instructions.append('push string ""')
+            else:
+                raise Exception(f"Unsupported variable type '{var_type}' in create statement")
+            self.pop_symbol(symbol)
+        if len(crate_stmt)== 5:
+            # is a class instance so constructor call
+            var_type = crate_stmt[0].value
+            var_name = crate_stmt[1].value
+            symbol = self.parse_symbol(var_name)
+            assert crate_stmt[2].type == "EQ"
+            class_name = crate_stmt[3].value
+            assert crate_stmt[3].type == "CLASS_NAME"
+            args = crate_stmt[4].value
+            assert crate_stmt[4].type == "ARGS"
+            for arg in args:
+                self.generate_expression(arg)
+            self.instructions.append(f"call {class_name}.new {len(args)}")
+            self.pop_symbol(symbol)
+
 
 
     def parse_symbol(self, var_name):
@@ -253,6 +282,9 @@ class VMGenerator:
 
 
     def generate_set_statement(self, set_stmt, method_name):
+        print("set statement:")
+        Parser.pretty_print(set_stmt)
+        print("len of set statement", len(set_stmt))
         if len(set_stmt) == 3:
             calss_var = set_stmt[0]
             var = set_stmt[1]
@@ -270,6 +302,16 @@ class VMGenerator:
                 self.symbol_table_manager.enter_scope_for_lookup(method_name)
                 #print(self.symbol_table_manager.table.symbols)
                 self.pop_symbol(f"this {slot.slot}")
+
+        elif len(set_stmt) == 2:
+            var = set_stmt[0]
+            assert set_stmt[1].type == "TO"
+            expr = set_stmt[1].value
+            self.generate_expression(expr)
+            slot = self.symbol_table_manager.lookup(var.value)
+            print(slot)
+            self.pop_slot(slot)
+            #self.pop_symbol(f"local {slot.slot}")
 
 
 
@@ -295,6 +337,7 @@ class VMGenerator:
 
 
     def generate_if_statement(self, if_stmt):
+        comp = None
         label_id = self.get_new_label_id()
         Parser.pretty_print(if_stmt)
         if_token = if_stmt.value[1]
@@ -330,6 +373,8 @@ class VMGenerator:
             self.instructions.append("label IF_FALSE" + str(label_id))
             self.generate_statmen(else_token)
             self.instructions.append("label IF_END" + str(label_id))
+        else:
+            self.instructions.append("label IF_FALSE" + str(label_id))
         #label_id = self.get_new_label_id()
 
     def generate_function_call(self, fn_call):
@@ -458,6 +503,17 @@ class VMGenerator:
         current_id = self.goto_count
         self.goto_count += 1
         return current_id
+
+    def pop_slot(self, slot):
+        if slot.type == ST.SymbolType.VARIABLE:
+            segment = "local"
+        elif slot.type == ST.SymbolType.FIELD:
+            segment = "this"
+        elif slot.type == ST.SymbolType.PARAM:
+            segment = "argument"
+        else:
+            raise Exception(f"Unsupported symbol type for '{slot.name}'")
+        self.pop_symbol(f"{segment} {slot.slot}")
 
 
 

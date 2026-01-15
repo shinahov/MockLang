@@ -152,7 +152,7 @@ class Parser:
                             buffer.append(self.parse_expression())
                         return buffer
                     elif self.token.type == "SEMI":
-                        pretty_print(buffer)
+                        #pretty_print(buffer)
                         return buffer
 
 
@@ -195,7 +195,7 @@ class Parser:
                         self.pop() # consume TO
                         buffer.append(Token("TO", self.parse_expression()))
 
-        print("SET_STMT parsed:", buffer)
+        #print("SET_STMT parsed:", buffer)
         return buffer
 
 
@@ -264,7 +264,7 @@ class Parser:
                 return_type = self.parse_return_type()
                 assert self.token.type == "COLON"
                 self.pop() # consume :
-                print("first token in method body:", self.token)
+                #print("first token in method body:", self.token)
                 body = self.parse_method_body()
                 return (Token("METHOD_DEF",
                               [Token("NAME", name),
