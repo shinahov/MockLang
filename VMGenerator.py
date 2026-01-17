@@ -210,13 +210,16 @@ class VMGenerator:
 
                 elif right.type == "IDENT":
                     var_name = right.value
+                    self.save_this_pointer()
                     self.generate_expression(left)
                     slot = self.symbol_table_manager.lookup(var_name)
                     if slot is None:
                         raise Exception(f"Undefined variable '{var_name}'")
                     if slot.type != ST.SymbolType.FIELD:
                         raise Exception(f"Variable '{var_name}' is not a field")
+                    self.pop_symbol("pointer 0")
                     self.instructions.append(f"push this {slot.slot}")
+                    self.restore_this_pointer()
                 else:
                     raise Exception(f"Unsupported right side of DOT: {right}")
 
@@ -400,7 +403,7 @@ class VMGenerator:
         name = fn_call[0].value
         args = fn_call[1].value
         self.push_arguments(args)
-        self.instructions.append(f"call {name} {len(args)}")
+        self.instructions.append(f"call {self.class_name}.{name} {len(args)}")
 
     def constructor_generator(self, value, body):
         field_count = self.symbol_table_manager.table.length()
@@ -533,6 +536,8 @@ class VMGenerator:
         print("class call:", class_call)
         class_instance = (self.symbol_table_manager.lookup(class_call[0].value)).data_type
         args = class_call[2].value
+        #print("!!!!!!!!!!!!!!!! ", self.symbol_table_manager.lookup(class_call[0].value))
+        self.push_symbol(self.parse_symbol(class_call[0].value))
         self.push_arguments(args)
         self.instructions.append(f"call {class_instance}.{class_call[1].value} "
                                  f"{len(args) + 1}")
@@ -547,11 +552,19 @@ class VMGenerator:
 
     def handle_multi_set(self, var):
         identifiers = var.value
-        for ident in identifiers:
+        for ident in identifiers[::-1]:
             slot = self.symbol_table_manager.lookup(ident.value)
             if slot is None:
                 raise Exception(f"Undefined variable '{ident.value}'")
             self.pop_slot(slot)
+
+    def save_this_pointer(self):
+        self.push_symbol("pointer 0")
+        self.pop_symbol("temp 0")
+
+    def restore_this_pointer(self):
+        self.push_symbol("temp 0")
+        self.pop_symbol("pointer 0")
 
 
 
