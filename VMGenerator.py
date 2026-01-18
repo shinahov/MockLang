@@ -144,7 +144,7 @@ class VMGenerator:
         return (f"{segment} {symbol.slot}")
 
     def generate_expression(self, expr):
-        print("generating expression", expr)
+        #print("generating expression", expr)
 
         if isinstance(expr, Tokenizer.Token) and expr.type == "TERM":
             return self.generate_expression(expr.value)
@@ -153,7 +153,7 @@ class VMGenerator:
             return self.generate_method_call(class_call)
 
         elif not (isinstance(expr, Tokenizer.Token) and expr.type == "EXPR"):
-            print("expr type:", expr.type)
+            #print("expr type:", expr.type)
             return self.write_value(expr)
 
 
@@ -164,10 +164,10 @@ class VMGenerator:
                 return self.generate_expression(single)
             else:
                 return self.write_value(single)
-        print("expression parts!!!!!!!!!:    ", parts)
+        #print("expression parts!!!!!!!!!:    ", parts)
         if len(parts) == 3:
             left, middle, right = parts
-            print("complex expression parts:", left, middle, right)
+            #print("complex expression parts:", left, middle, right)
 
             if middle.type == "OPERATOR":
                 operator = middle.value
@@ -345,14 +345,26 @@ class VMGenerator:
 
     def generate_return_statement(self, return_stmt):
         for expr in return_stmt:
-            #print("expressions in return", expr)
+            print("expressions in return", expr)
             if len(expr) == 1:
                 self.write_value(expr[0])
             elif len(expr) == 2:
                 if expr[0].value == "self":
                     slot = self.symbol_table_manager.lookup(expr[1].value)
                     self.push_symbol(f"this {slot.slot}")
-                #todo for other cases
+
+                elif expr[0].type == "CLASS":
+                    slot = self.symbol_table_manager.lookup(expr[1].value)
+                    self.save_this_pointer()
+                    var = self.parse_symbol(expr[0].value)
+                    self.push_symbol(var)
+                    self.pop_symbol("pointer 0")
+                    self.instructions.append(f"push this {slot.slot}")
+                    self.restore_this_pointer()
+                elif expr[0].type == "IDENT":
+                    slot = self.symbol_table_manager.lookup(expr[1].value)
+                    self.push_symbol(f"local {slot.slot}")
+
         self.instructions.append("return")
 
 
@@ -533,7 +545,7 @@ class VMGenerator:
         self.pop_symbol(f"{segment} {slot.slot}")
 
     def generate_method_call(self, class_call):
-        print("class call:", class_call)
+        #print("class call:", class_call)
         class_instance = (self.symbol_table_manager.lookup(class_call[0].value)).data_type
         args = class_call[2].value
         #print("!!!!!!!!!!!!!!!! ", self.symbol_table_manager.lookup(class_call[0].value))

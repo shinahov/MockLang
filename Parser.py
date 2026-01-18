@@ -347,7 +347,7 @@ class Parser:
                                              name,
                                              Token("ARGS", args)])])
                     else:
-                        chain.extend([Token("ClASS", token.value), name])
+                        chain.extend([Token("CLASS", token.value), name])
                 elif self.token.type == "LP":
                     self.pop()  # skipp '('
                     args = self.parse_args()

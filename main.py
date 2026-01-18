@@ -20,8 +20,10 @@ code = """class Ball [radius:int, x:int, y:int, speed:float]:
     set self.x to x;
   end 
   
-  fn some_func(val:int, zahl:int) -> void:
+  fn some_func(val:int, zahl:int) -> int, int:
+    create Ball ball1 = Ball(5, 10, 3, 3.14);
     print(val);
+    return ball1.x, val;
   end
 
 
