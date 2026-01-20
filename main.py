@@ -52,6 +52,7 @@ code = """class Ball [radius:int, x:int, y:int, speed:float]:
     create Ball ball = Ball(5, 10, 3, 3.14);
     ball.setBall(6, 7);
     set z, a, c to ball.getBall();
+    set a to ball.radius;
     print(z);
     print(a);
     print(c);
@@ -63,6 +64,16 @@ code = """class Ball [radius:int, x:int, y:int, speed:float]:
 
 end
 """
+
+code_simple = """class Test :
+    fn main() -> void:
+    create int a = 10;
+    create int b = 20;
+    print(a + b);
+    end
+end
+"""
+
 
 class Compiler:
     def __init__(self, path):
@@ -80,7 +91,7 @@ class Compiler:
 
 
 def let_test():
-    tokens = Tokenizer.Tokenizer().tokenize(code)
+    tokens = Tokenizer.Tokenizer().tokenize(code_simple)
     #print("Tokens:", tokens)
     parser = Parser.Parser(tokens)
     programm = parser.parse()

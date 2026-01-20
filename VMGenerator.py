@@ -299,8 +299,8 @@ class VMGenerator:
 
 
     def generate_set_statement(self, set_stmt, method_name):
-        #print("set statement:")
-        #Parser.pretty_print(set_stmt)
+        print("set statement:")
+        Parser.pretty_print(set_stmt)
         #print("len of set statement", len(set_stmt))
         if len(set_stmt) == 3:
             calss_var = set_stmt[0]
@@ -309,7 +309,9 @@ class VMGenerator:
             expr = set_stmt[2].value
             self.generate_expression(expr)
             if calss_var.type == "IDENT":
-                pass # TODO for other cases
+                print("set statment with 3 ", set_stmt)
+                pass # TODO: implement normal set
+
 
             elif calss_var.type == "SELF":
                 slot = self.symbol_table_manager.lookup(var.value)

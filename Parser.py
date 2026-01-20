@@ -62,6 +62,7 @@ class Parser:
         self.pop()
         token = self.token
         if token.type == "COLON":
+            self.programm.append(Token("FIELDS", []))
             self.programm.append(Token("BODY", self.parse_body()))
         elif token.type == "LBRK":
             self.programm.append(Token("FIELDS", self.parse_fields()))
@@ -99,6 +100,9 @@ class Parser:
         fields = []
         while True:
             self.pop()
+            if self.token.type == "RBRK":
+                break
+            print("Parsing field, current token:", self.token)
             assert self.token.type == "IDENT"
             field_name = self.token.value
             self.pop()
