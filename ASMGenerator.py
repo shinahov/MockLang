@@ -68,10 +68,10 @@ class ASMGenerator:
             cmd = parts[0]
 
             if cmd == "push":
-                pass  # Implement push translation
+                self.push(parts)
 
             elif cmd == "pop":
-                pass
+                self.pop(parts)
 
             elif cmd == "add":
                 pass
@@ -99,3 +99,83 @@ class ASMGenerator:
     def write_fn_label(self, func_name):
         label = func_name.replace('.', '_')
         self.asm_instructions.append(f"{label}:")
+
+    def push(self, parts):
+        if len(parts) != 3:
+            raise ValueError(f"Invalid push instruction: {' '.join(parts)}")
+
+        segment = parts[1]
+        index = parts[2]
+
+        if segment == "constant":
+            self.push_constant(index)
+        elif segment == "local":
+            self.push_local(index)
+        elif segment == "argument":
+            self.push_argument(index)
+        elif segment == "this":
+            self.push_this(index)
+        elif segment == "pointer":
+            self.push_this(index)  # pointer 0 is this
+        elif segment == "that":
+            pass # dont have that segment implemented yet
+        else:
+            raise ValueError(f"Unknown segment in push instruction: {segment}")
+
+    def push_constant(self, index):
+        self.asm_instructions.append(f"    mov rax, {index}")
+        self.asm_instructions.append(f"    mov [r12], rax")
+        self.asm_instructions.append(f"    add r12, 8  ; increment stack pointer")
+        self.write_ln()
+
+    def push_local(self, index):
+        self.asm_instructions.append(f"    mov rax, [r13 + {int(index) * 8}]")
+        self.asm_instructions.append(f"    mov [r12], rax")
+        self.asm_instructions.append(f"    add r12, 8  ; increment stack pointer")
+        self.write_ln()
+
+    def push_argument(self, index):
+        self.asm_instructions.append(f"    mov rax, [r14 + {int(index) * 8}]")
+        self.asm_instructions.append(f"    mov [r12], rax")
+        self.asm_instructions.append(f"    add r12, 8  ; increment stack pointer")
+        self.write_ln()
+
+    def push_this(self, index):
+        self.asm_instructions.append(f"    mov rax, [r15 + {int(index) * 8}]")
+        self.asm_instructions.append(f"    mov [r12], rax")
+        self.asm_instructions.append(f"    add r12, 8  ; increment stack pointer")
+        self.write_ln()
+
+    def pop(self, parts):
+        if len(parts) != 3:
+            raise ValueError(f"Invalid pop instruction: {' '.join(parts)}")
+
+        segment = parts[1]
+        index = parts[2]
+
+        if segment == "local":
+            self.pop_local(index)
+        elif segment == "argument":
+            self.pop_argument(index)
+        elif segment == "this":
+            self.pop_this(index)
+        elif segment == "that":
+            pass
+
+    def pop_local(self, index):
+        self.asm_instructions.append(f"    sub r12, 8  ; decrement stack pointer")
+        self.asm_instructions.append(f"    mov rax, [r12]")
+        self.asm_instructions.append(f"    mov [r13 + {int(index) * 8}], rax")
+        self.write_ln()
+
+    def pop_argument(self, index):
+        self.asm_instructions.append(f"    sub r12, 8  ; decrement stack pointer")
+        self.asm_instructions.append(f"    mov rax, [r12]")
+        self.asm_instructions.append(f"    mov [r14 + {int(index) * 8}], rax")
+        self.write_ln()
+
+    def pop_this(self, index):
+        self.asm_instructions.append(f"    sub r12, 8  ; decrement stack pointer")
+        self.asm_instructions.append(f"    mov rax, [r12]")
+        self.asm_instructions.append(f"    mov [r15 + {int(index) * 8}], rax")
+        self.write_ln()
