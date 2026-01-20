@@ -4,6 +4,7 @@ import Parser
 import SymbolAnalyzer as SA
 import Symbol_table as ST
 import VMGenerator as VM
+import ASMGenerator as ASM
 
 code = """class Ball [radius:int, x:int, y:int, speed:float]:
   create int q = 5;
@@ -109,6 +110,14 @@ def let_test():
     instructions = vm_generator.generate()
     print("Generated VM Instructions:")
     for instr in instructions:
+        print(instr)
+    print("")
+    print("_______________________________")
+
+    asm_generator = ASM.ASMGenerator(instructions)
+    asm_instructions = asm_generator.generate()
+    print("Generated ASM Instructions:")
+    for instr in asm_instructions:
         print(instr)
 
 
