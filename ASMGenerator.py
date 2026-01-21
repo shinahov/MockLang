@@ -102,7 +102,7 @@ class ASMGenerator:
                 if func_name == "print.int" and nargs == 1:
                     self.write_print_int(parts)
                 else:
-                    pass #TODO: implement function calls
+                    self.call_function(func_name, nargs)
 
             elif cmd == "return":
                 self.write_return()
@@ -219,7 +219,7 @@ class ASMGenerator:
         self.asm_instructions.append("    mov rax , [SP]  ; pop value into rax")
 
     def write_return(self):
-        pass # return not implemented yet
+        pass # TODO: implement return
 
     def terminate_program(self):
         self.asm_instructions.append("    mov eax, 0")
@@ -249,6 +249,39 @@ class ASMGenerator:
         self.asm_instructions.append("%define FRAME r10")
         self.asm_instructions.append("%define RET   r11")
         self.asm_instructions.append("%define TEMP  r9")
+        self.write_ln()
+
+    def call_function(self, func_name, nargs):
+        return_label = f"RET_LABEL{self.label_count}"
+        self.label_count += 1
+
+        # Push return address
+        self.asm_instructions.append(f"    lea RET, [rel {return_label}]")
+        self.asm_instructions.append("    mov [SP], RET")
+        self.asm_instructions.append("    add SP, 8  ; increment stack pointer")
+
+        # Save LCL, ARG, THIS
+        self.asm_instructions.append("    mov [SP], LCL")
+        self.asm_instructions.append("    add SP, 8  ; increment stack pointer")
+        self.asm_instructions.append("    mov [SP], ARG")
+        self.asm_instructions.append("    add SP, 8  ; increment stack pointer")
+        self.asm_instructions.append("    mov [SP], THIS")
+        self.asm_instructions.append("    add SP, 8  ; increment stack pointer")
+
+        # Reposition ARG
+        self.asm_instructions.append("    mov TEMP, SP")
+        self.asm_instructions.append(f"    sub TEMP, {nargs * 8}")
+        self.asm_instructions.append("    sub TEMP, 32")  # 4*8 (RET + LCL + ARG + THIS)
+        self.asm_instructions.append("    mov ARG, TEMP")
+
+        # Reposition LCL
+        self.asm_instructions.append("    mov LCL, SP")
+
+        # Jump to function
+        self.asm_instructions.append(f"    jmp {func_name}")
+
+        # Declare return label
+        self.asm_instructions.append(f"{return_label}:")
         self.write_ln()
 
 
