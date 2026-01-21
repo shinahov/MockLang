@@ -30,6 +30,8 @@ class ASMGenerator:
 
     def make_header(self):
         self.asm_instructions.append("default rel")
+        self.create_alias()
+        self.write_ln()
         self.asm_instructions.append("global main")
         self.asm_instructions.append("extern printf")
         self.write_ln()
@@ -53,10 +55,10 @@ class ASMGenerator:
         self.asm_instructions.append("main:")
         self.asm_instructions.append("    push rbp")
         self.asm_instructions.append("    mov rbp, rsp")
-        self.asm_instructions.append("    lea r12, [vm_stack]")  # Initialize VM stack pointer
-        self.asm_instructions.append("    mov r13, r12")  # lcl
-        self.asm_instructions.append("    mov r14, r12")  # arg
-        self.asm_instructions.append("    xor r15, r15")  # this = 0
+        self.asm_instructions.append("    lea SP, [vm_stack]")  # Initialize VM stack pointer
+        self.asm_instructions.append("    mov LCL, SP")  # lcl
+        self.asm_instructions.append("    mov ARG, SP")  # arg
+        self.asm_instructions.append("    xor THIS, THIS")  # this = 0
         self.write_ln()
         self.asm_instructions.append("    jmp vm_start")
 
@@ -75,18 +77,18 @@ class ASMGenerator:
                 self.pop(parts)
 
             elif cmd == "add":
-                self.asm_instructions.append("    sub r12, 8  ; decrement stack pointer")
-                self.asm_instructions.append("    mov rbx, [r12]  ; pop y")
-                self.asm_instructions.append("    sub r12, 8  ; decrement stack pointer")
-                self.asm_instructions.append("    mov rax, [r12]  ; pop x")
+                self.asm_instructions.append("    sub SP, 8  ; decrement stack pointer")
+                self.asm_instructions.append("    mov rbx, [SP]  ; pop y")
+                self.asm_instructions.append("    sub SP, 8  ; decrement stack pointer")
+                self.asm_instructions.append("    mov rax, [SP]  ; pop x")
                 self.asm_instructions.append("    add rax, rbx    ; x + y")
                 self.push_rax()
 
             elif cmd == "sub":
-                self.asm_instructions.append("    sub r12, 8  ; decrement stack pointer")
-                self.asm_instructions.append("    mov rax, [r12]  ; pop y")
-                self.asm_instructions.append("    sub r12, 8  ; decrement stack pointer")
-                self.asm_instructions.append("    mov rbx, [r12]  ; pop x")
+                self.asm_instructions.append("    sub SP, 8  ; decrement stack pointer")
+                self.asm_instructions.append("    mov rax, [SP]  ; pop y")
+                self.asm_instructions.append("    sub SP, 8  ; decrement stack pointer")
+                self.asm_instructions.append("    mov rbx, [SP]  ; pop x")
                 self.asm_instructions.append("    sub rbx, rax    ; x - y")
                 self.push_rbx()
 
@@ -100,7 +102,7 @@ class ASMGenerator:
                 if func_name == "print.int" and nargs == 1:
                     self.write_print_int(parts)
                 else:
-                    pass # other function calls not implemented yet
+                    pass #TODO: implement function calls
 
             elif cmd == "return":
                 self.write_return()
@@ -144,26 +146,26 @@ class ASMGenerator:
 
     def push_constant(self, index):
         self.asm_instructions.append(f"    mov rax, {index}")
-        self.asm_instructions.append(f"    mov [r12], rax")
-        self.asm_instructions.append(f"    add r12, 8  ; increment stack pointer")
+        self.asm_instructions.append(f"    mov [SP], rax")
+        self.asm_instructions.append(f"    add SP, 8  ; increment stack pointer")
         self.write_ln()
 
     def push_local(self, index):
-        self.asm_instructions.append(f"    mov rax, [r13 + {int(index) * 8}]")
-        self.asm_instructions.append(f"    mov [r12], rax")
-        self.asm_instructions.append(f"    add r12, 8  ; increment stack pointer")
+        self.asm_instructions.append(f"    mov rax, [LCL + {int(index) * 8}]")
+        self.asm_instructions.append(f"    mov [SP], rax")
+        self.asm_instructions.append(f"    add SP, 8  ; increment stack pointer")
         self.write_ln()
 
     def push_argument(self, index):
-        self.asm_instructions.append(f"    mov rax, [r14 + {int(index) * 8}]")
-        self.asm_instructions.append(f"    mov [r12], rax")
-        self.asm_instructions.append(f"    add r12, 8  ; increment stack pointer")
+        self.asm_instructions.append(f"    mov rax, [ARG + {int(index) * 8}]")
+        self.asm_instructions.append(f"    mov [SP], rax")
+        self.asm_instructions.append(f"    add SP, 8  ; increment stack pointer")
         self.write_ln()
 
     def push_this(self, index):
-        self.asm_instructions.append(f"    mov rax, [r15 + {int(index) * 8}]")
-        self.asm_instructions.append(f"    mov [r12], rax")
-        self.asm_instructions.append(f"    add r12, 8  ; increment stack pointer")
+        self.asm_instructions.append(f"    mov rax, [THIS + {int(index) * 8}]")
+        self.asm_instructions.append(f"    mov [SP], rax")
+        self.asm_instructions.append(f"    add SP, 8  ; increment stack pointer")
         self.write_ln()
 
     def pop(self, parts):
@@ -183,26 +185,26 @@ class ASMGenerator:
             pass
 
     def pop_local(self, index):
-        self.asm_instructions.append(f"    sub r12, 8  ; decrement stack pointer")
-        self.asm_instructions.append(f"    mov rax, [r12]")
-        self.asm_instructions.append(f"    mov [r13 + {int(index) * 8}], rax")
+        self.asm_instructions.append(f"    sub SP, 8  ; decrement stack pointer")
+        self.asm_instructions.append(f"    mov rax, [SP]")
+        self.asm_instructions.append(f"    mov [LCL + {int(index) * 8}], rax")
         self.write_ln()
 
     def pop_argument(self, index):
-        self.asm_instructions.append(f"    sub r12, 8  ; decrement stack pointer")
-        self.asm_instructions.append(f"    mov rax, [r12]")
-        self.asm_instructions.append(f"    mov [r14 + {int(index) * 8}], rax")
+        self.asm_instructions.append(f"    sub SP, 8  ; decrement stack pointer")
+        self.asm_instructions.append(f"    mov rax, [SP]")
+        self.asm_instructions.append(f"    mov [ARG + {int(index) * 8}], rax")
         self.write_ln()
 
     def pop_this(self, index):
-        self.asm_instructions.append(f"    sub r12, 8  ; decrement stack pointer")
-        self.asm_instructions.append(f"    mov rax, [r12]")
-        self.asm_instructions.append(f"    mov [r15 + {int(index) * 8}], rax")
+        self.asm_instructions.append(f"    sub SP, 8  ; decrement stack pointer")
+        self.asm_instructions.append(f"    mov rax, [SP]")
+        self.asm_instructions.append(f"    mov [THIS + {int(index) * 8}], rax")
         self.write_ln()
 
     def push_rax(self):
-        self.asm_instructions.append(f"    mov [r12], rax")
-        self.asm_instructions.append(f"    add r12, 8  ; increment stack pointer")
+        self.asm_instructions.append(f"    mov [SP], rax")
+        self.asm_instructions.append(f"    add SP, 8  ; increment stack pointer")
         self.write_ln()
 
     def write_print_int(self, parts):
@@ -213,8 +215,8 @@ class ASMGenerator:
         self.asm_instructions.append("    call printf")
 
     def pop_rax(self):
-        self.asm_instructions.append("    sub r12, 8  ; decrement stack pointer")
-        self.asm_instructions.append("    mov rax , [r12]  ; pop value into rax")
+        self.asm_instructions.append("    sub SP, 8  ; decrement stack pointer")
+        self.asm_instructions.append("    mov rax , [SP]  ; pop value into rax")
 
     def write_return(self):
         pass # return not implemented yet
@@ -225,8 +227,8 @@ class ASMGenerator:
         self.asm_instructions.append("    ret")
 
     def push_rbx(self):
-        self.asm_instructions.append(f"    mov [r12], rbx")
-        self.asm_instructions.append(f"    add r12, 8  ; increment stack pointer")
+        self.asm_instructions.append(f"    mov [SP], rbx")
+        self.asm_instructions.append(f"    add SP, 8  ; increment stack pointer")
         self.write_ln()
 
     def create_stack_frame(self, nlocals: int):
@@ -235,7 +237,19 @@ class ASMGenerator:
 
     def push_0_nlocals(self, nlocals):
         for _ in range(nlocals):
-            self.asm_instructions.append("    mov qword [r12], 0")
-            self.asm_instructions.append("    add r12, 8  ; increment stack pointer")
+            self.asm_instructions.append("    mov qword [SP], 0")
+            self.asm_instructions.append("    add SP, 8  ; increment stack pointer")
+
+    def create_alias(self):
+        self.asm_instructions.append("; Aliases")
+        self.asm_instructions.append("%define SP    r12")
+        self.asm_instructions.append("%define LCL   r13")
+        self.asm_instructions.append("%define ARG   r14")
+        self.asm_instructions.append("%define THIS  r15")
+        self.asm_instructions.append("%define FRAME r10")
+        self.asm_instructions.append("%define RET   r11")
+        self.asm_instructions.append("%define TEMP  r9")
+        self.write_ln()
+
 
 
