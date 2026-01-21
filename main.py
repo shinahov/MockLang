@@ -69,7 +69,7 @@ end
 code_simple = """class Test :
     fn main() -> void:
     create int a = 10;
-    create int b = 20;
+    create int b = 50;
     print(a + b);
     end
 end

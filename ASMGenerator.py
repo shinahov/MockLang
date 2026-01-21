@@ -26,6 +26,7 @@ class ASMGenerator:
     def generate_asm(self):
         self.make_header()
         self.translate_vm_instructions()
+        self.terminate_program()
 
     def make_header(self):
         self.asm_instructions.append("default rel")
@@ -74,16 +75,35 @@ class ASMGenerator:
                 self.pop(parts)
 
             elif cmd == "add":
-                pass
+                self.asm_instructions.append("    sub r12, 8  ; decrement stack pointer")
+                self.asm_instructions.append("    mov rbx, [r12]  ; pop y")
+                self.asm_instructions.append("    sub r12, 8  ; decrement stack pointer")
+                self.asm_instructions.append("    mov rax, [r12]  ; pop x")
+                self.asm_instructions.append("    add rax, rbx    ; x + y")
+                self.push_rax()
 
             elif cmd == "sub":
-                pass
+                self.asm_instructions.append("    sub r12, 8  ; decrement stack pointer")
+                self.asm_instructions.append("    mov rax, [r12]  ; pop y")
+                self.asm_instructions.append("    sub r12, 8  ; decrement stack pointer")
+                self.asm_instructions.append("    mov rbx, [r12]  ; pop x")
+                self.asm_instructions.append("    sub rbx, rax    ; x - y")
+                self.push_rbx()
 
             elif cmd == "call":
-                pass
+                if len(parts) != 3:
+                    raise ValueError(f"Invalid call instruction: {instr}")
+
+                func_name = parts[1]
+                nargs = int(parts[2])
+
+                if func_name == "print.int" and nargs == 1:
+                    self.write_print_int(parts)
+                else:
+                    pass # other function calls not implemented yet
 
             elif cmd == "return":
-                pass
+                self.write_return()
 
             elif cmd == "function":
                 if len(parts) != 3:
@@ -91,14 +111,14 @@ class ASMGenerator:
 
                 func_name = parts[1]
                 nlocals = int(parts[2])
-                if is_main_function(func_name):
-                    self.asm_instructions.append("vm_start:")
-                else:
-                    self.write_fn_label(func_name)
+                self.write_fn_label(func_name, nlocals)
 
-    def write_fn_label(self, func_name):
-        label = func_name.replace('.', '_')
-        self.asm_instructions.append(f"{label}:")
+    def write_fn_label(self, func_name, nlocals):
+        if is_main_function(func_name):
+            self.asm_instructions.append("vm_start:")
+        else:
+            self.asm_instructions.append(f"{func_name}:")
+        self.create_stack_frame(nlocals)
 
     def push(self, parts):
         if len(parts) != 3:
@@ -179,3 +199,43 @@ class ASMGenerator:
         self.asm_instructions.append(f"    mov rax, [r12]")
         self.asm_instructions.append(f"    mov [r15 + {int(index) * 8}], rax")
         self.write_ln()
+
+    def push_rax(self):
+        self.asm_instructions.append(f"    mov [r12], rax")
+        self.asm_instructions.append(f"    add r12, 8  ; increment stack pointer")
+        self.write_ln()
+
+    def write_print_int(self, parts):
+        self.pop_rax()
+        self.asm_instructions.append("    mov rsi, rax")
+        self.asm_instructions.append("    lea rdi, [fmt_int]")
+        self.asm_instructions.append("    xor rax, rax")
+        self.asm_instructions.append("    call printf")
+
+    def pop_rax(self):
+        self.asm_instructions.append("    sub r12, 8  ; decrement stack pointer")
+        self.asm_instructions.append("    mov rax , [r12]  ; pop value into rax")
+
+    def write_return(self):
+        pass # return not implemented yet
+
+    def terminate_program(self):
+        self.asm_instructions.append("    mov eax, 0")
+        self.asm_instructions.append("    leave")
+        self.asm_instructions.append("    ret")
+
+    def push_rbx(self):
+        self.asm_instructions.append(f"    mov [r12], rbx")
+        self.asm_instructions.append(f"    add r12, 8  ; increment stack pointer")
+        self.write_ln()
+
+    def create_stack_frame(self, nlocals: int):
+        self.push_0_nlocals(nlocals)
+        self.write_ln()
+
+    def push_0_nlocals(self, nlocals):
+        for _ in range(nlocals):
+            self.asm_instructions.append("    mov qword [r12], 0")
+            self.asm_instructions.append("    add r12, 8  ; increment stack pointer")
+
+
