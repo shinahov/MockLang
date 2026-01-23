@@ -143,7 +143,18 @@ code_simple_loop = """class Test :
     end
 end
 """
-fin_code = code_simple_loop
+
+code_string_print = """class Test :
+    fn main() -> void:
+       create String text = "Hello, Compiler!";   
+       print(text);
+    end
+end
+"""
+
+
+
+fin_code = code_string_print
 
 class Compiler:
     def __init__(self, path):

@@ -15,9 +15,12 @@ def is_main_function(func_name):
 
 class ASMGenerator:
     def __init__(self, VM_instructions: List[str]):
+        self.data_insert_pos = None
         self.VM_instructions = VM_instructions
         self.asm_instructions: List[str] = []
         self.label_count = 0
+        self.string_id = 0
+        self.string_literals = {}
 
     def generate(self) -> List[str]:
         self.generate_asm()
@@ -39,6 +42,8 @@ class ASMGenerator:
         self.write_ln()
         self.asm_instructions.append("section .data")
         self.asm_instructions.append('fmt_int db "%d", 10, 0')
+        self.asm_instructions.append('fmt_str db "%s", 10, 0')
+        self.data_insert_pos = len(self.asm_instructions)
         self.write_ln()
         self.add_bss_section()
         self.add_text_section()
@@ -47,6 +52,8 @@ class ASMGenerator:
     def add_bss_section(self):
         self.asm_instructions.append("section .bss")
         self.asm_instructions.append("vm_stack: resq 1024")
+        self.asm_instructions.append("heap:     resb 65536")
+        self.asm_instructions.append("heap_ptr: resq 1")
         self.write_ln()
 
     def add_text_section(self):
@@ -55,6 +62,7 @@ class ASMGenerator:
 
     def runtime_setup(self):
         self.stubb_mem_alloc()
+        self.mem_alloc_bytes()
         self.asm_instructions.append("main:")
         self.asm_instructions.append("    push rbp")
         self.asm_instructions.append("    mov rbp, rsp")
@@ -62,6 +70,8 @@ class ASMGenerator:
         self.asm_instructions.append("    mov LCL, SP")  # lcl
         self.asm_instructions.append("    mov ARG, SP")  # arg
         self.asm_instructions.append("    xor THIS, THIS")  # this = 0
+        self.asm_instructions.append("    lea rax, [heap]")
+        self.asm_instructions.append("    mov [heap_ptr], rax")
         self.write_ln()
         self.call_vm_start()
 
@@ -104,6 +114,8 @@ class ASMGenerator:
 
                 if func_name == "print.int" and nargs == 1:
                     self.write_print_int(parts)
+                elif func_name == "print.String" and nargs == 1:
+                    self.write_print_string()
                 else:
                     self.call_function(func_name, nargs)
 
@@ -159,11 +171,12 @@ class ASMGenerator:
         self.create_stack_frame(nlocals)
 
     def push(self, parts):
-        if len(parts) != 3:
-            raise ValueError(f"Invalid push instruction: {' '.join(parts)}")
+        #if len(parts) != 3:
+            #raise ValueError(f"Invalid push instruction: {' '.join(parts)}")
 
         segment = parts[1]
         index = parts[2]
+        #print(segment, index)
 
         if segment == "constant":
             self.push_constant(index)
@@ -175,6 +188,8 @@ class ASMGenerator:
             self.push_this(index)
         elif segment == "pointer":
             self.push_this(index)  # pointer 0 is this
+        elif segment == "string":
+            self.push_string(parts[2:])
         elif segment == "that":
             pass # dont have that segment implemented yet
         else:
@@ -202,6 +217,16 @@ class ASMGenerator:
         self.asm_instructions.append(f"    mov rax, [THIS + {int(index) * 8}]")
         self.asm_instructions.append(f"    mov [SP], rax")
         self.asm_instructions.append(f"    add SP, 8  ; increment stack pointer")
+        self.write_ln()
+
+    def write_print_string(self):
+        self.pop_rax()
+        self.asm_instructions.append("    mov rsi, rax")
+        self.asm_instructions.append("    lea rdi, [fmt_str]")
+        self.asm_instructions.append("    xor eax, eax")
+        self.asm_instructions.append("    sub rsp, 8")  # alignment (wichtig bei printf)
+        self.asm_instructions.append("    call printf")
+        self.asm_instructions.append("    add rsp, 8")
         self.write_ln()
 
     def pop(self, parts):
@@ -404,8 +429,81 @@ class ASMGenerator:
         self.asm_instructions.append("    mov [SP], rax   ; push result")
         self.asm_instructions.append("    add SP, 8       ; increment stack pointer")
 
+    def push_string(self, param):
+
+        raw = " ".join(param).strip()
+        length, value = self.get_len(param)
+
+        # Ensure literal exists in .data
+        if raw not in self.string_literals:
+            label = f"STR_LIT_{self.string_id}"
+            self.string_id += 1
+            self.string_literals[raw] = (label, length)
+
+            # Minimal NASM escaping: double quotes
+            value_escaped = value.replace('"', '""')
+
+            lines = [
+                f'{label}: db "{value_escaped}"',
+                f'{label}_len equ {length}',
+                ""
+            ]
+
+            for line in reversed(lines):
+                self.asm_instructions.insert(self.data_insert_pos, line)
+            self.data_insert_pos += len(lines)
+
+        label, length = self.string_literals[raw]
+
+        # allocate len+1 bytes on heap
+        self.asm_instructions.append(f"    mov rdi, {length + 1}       ; bytes = len+1 for 0-terminator")
+        self.asm_instructions.append("    call Memory_alloc_bytes      ; rax = dst pointer")
+        self.asm_instructions.append("    mov rdx, rax                 ; save original dst pointer")
+
+        # copy bytes from .data literal to heap
+        self.asm_instructions.append(f"    lea rsi, [rel {label}]       ; source literal")
+        self.asm_instructions.append("    mov rdi, rax                 ; destination in heap")
+        self.asm_instructions.append(f"    mov rcx, {length}            ; number of bytes to copy")
+
+        loop = f"STRCPY_LOOP{self.label_count}"
+        done = f"STRCPY_DONE{self.label_count}"
+        self.label_count += 1
+
+        self.asm_instructions.append(f"{loop}:")
+        self.asm_instructions.append("    test rcx, rcx")
+        self.asm_instructions.append(f"    jz {done}")
+        self.asm_instructions.append("    mov bl, [rsi]")
+        self.asm_instructions.append("    mov [rdi], bl")
+        self.asm_instructions.append("    inc rsi")
+        self.asm_instructions.append("    inc rdi")
+        self.asm_instructions.append("    dec rcx")
+        self.asm_instructions.append(f"    jmp {loop}")
+        self.asm_instructions.append(f"{done}:")
+
+        # write 0 terminator
+        self.asm_instructions.append("    mov byte [rdi], 0            ; terminator")
+
+        # push pointer onto VM stack
+        self.asm_instructions.append("    mov rax, rdx                 ; restore dst pointer for push")
+        self.push_rax()
 
 
 
+    def mem_alloc_bytes(self):
+        self.asm_instructions.append("; Memory_alloc_bytes")
+        self.asm_instructions.append("Memory_alloc_bytes:")
+        self.asm_instructions.append("    ; rdi = num_bytes")
+        self.asm_instructions.append("    mov rax, [heap_ptr]")
+        self.asm_instructions.append("    lea rcx, [rax + rdi]")
+        self.asm_instructions.append("    mov [heap_ptr], rcx")
+        self.asm_instructions.append("    ret")
+
+
+
+    def get_len(self, param):
+        s = " ".join(param)
+        str_value = s.strip('"')
+        str_length = len(str_value)
+        return str_length, str_value
 
 
