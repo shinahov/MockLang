@@ -144,13 +144,16 @@ class VMGenerator:
         return (f"{segment} {symbol.slot}")
 
     def generate_expression(self, expr):
-        #print("generating expression", expr)
+        print("generating expression", expr)
 
         if isinstance(expr, Tokenizer.Token) and expr.type == "TERM":
             return self.generate_expression(expr.value)
         elif expr.type == "CLASS_METHOD_CALL":
             class_call = expr.value
             return self.generate_method_call(class_call)
+        elif expr.type == "FN_CALL":
+            fn_call = expr.value
+            return self.generate_function_call(fn_call)
 
         elif not (isinstance(expr, Tokenizer.Token) and expr.type == "EXPR"):
             #print("expr type:", expr.type)

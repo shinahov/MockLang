@@ -6,6 +6,8 @@ import Symbol_table as ST
 import VMGenerator as VM
 import ASMGenerator as ASM
 
+output_path = "/home/ibrahim_shinahov/Desktop/vmstack_add.asm"
+
 code = """class Ball [radius:int, x:int, y:int, speed:float]:
   create int q = 5;
   
@@ -91,6 +93,35 @@ code_func_call = """class Test :
 end
 """
 
+code_multi_return = """class Test :
+    fn multi_return() -> int, int:
+       create int a = 10;
+       create int b = 20;
+       return a, b;
+    end
+       
+    fn main() -> void:
+       create int x;
+       create int y;
+       set x, y to multi_return();
+       print(x);
+       print(y);
+    end
+end
+"""
+
+code_if_else = """class Test :
+    fn main() -> void:
+       create int a = 10;
+       if(a > 5){
+          print(1);
+       } else {
+          print(0);
+       }
+    end
+end
+"""
+
 
 class Compiler:
     def __init__(self, path):
@@ -108,7 +139,7 @@ class Compiler:
 
 
 def let_test():
-    tokens = Tokenizer.Tokenizer().tokenize(code_func_call)
+    tokens = Tokenizer.Tokenizer().tokenize(code_if_else)
     #print("Tokens:", tokens)
     parser = Parser.Parser(tokens)
     programm = parser.parse()
@@ -135,6 +166,8 @@ def let_test():
     print("Generated ASM Instructions:")
     for instr in asm_instructions:
         print(instr)
+    with open(r"C:\Users\ibrahim shinahov\Desktop\vmstack_add.asm", "w") as f:
+        f.write("\n".join(asm_instructions))
 
 
 if __name__ == "__main__":

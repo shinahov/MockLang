@@ -120,6 +120,35 @@ class ASMGenerator:
                 nlocals = int(parts[2])
                 self.write_fn_label(func_name, nlocals)
 
+            elif self.compare_arithmetic(cmd):
+                self.write_cmp_arithmetic_header(cmd)
+
+            elif cmd == "if-goto":
+                if len(parts) != 2:
+                    raise ValueError(f"Invalid if-goto instruction: {instr}")
+
+                label = parts[1]
+                self.pop_rax()
+                self.asm_instructions.append("    cmp rax, 0")
+                self.asm_instructions.append(f"    jne {label}")
+                self.write_ln()
+
+            elif cmd == "label":
+                if len(parts) != 2:
+                    raise ValueError(f"Invalid label instruction: {instr}")
+
+                label = parts[1]
+                self.asm_instructions.append(f"{label}:")
+                self.write_ln()
+
+            elif cmd == "goto":
+                if len(parts) != 2:
+                    raise ValueError(f"Invalid goto instruction: {instr}")
+
+                label = parts[1]
+                self.asm_instructions.append(f"    jmp {label}")
+                self.write_ln()
+
     def write_fn_label(self, func_name, nlocals):
         if is_main_function(func_name):
             self.asm_instructions.append("vm_start:")
@@ -346,6 +375,19 @@ class ASMGenerator:
         self.asm_instructions.append("    mov eax, 0")
         self.asm_instructions.append("    leave")
         self.asm_instructions.append("    ret")
+
+    def compare_arithmetic(self, cmd):
+        if cmd in ("eq", "gt", "lt"):
+            return True
+
+    def write_cmp_arithmetic_header(self, cmd):
+        self.asm_instructions.append("    sub SP, 8  ; decrement stack pointer")
+        self.asm_instructions.append("    mov rbx, [SP]  ; pop y")
+        self.asm_instructions.append("    sub SP, 8  ; decrement stack pointer")
+        self.asm_instructions.append("    mov rax, [SP]  ; pop x")
+        self.asm_instructions.append("    cmp rax, rbx    ; compare x and y")
+
+
 
 
 
