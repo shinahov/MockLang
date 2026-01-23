@@ -134,6 +134,16 @@ code_simple_if_else = """class Test :
 end
 """
 
+code_simple_loop = """class Test :
+    fn main() -> void:
+       loop(i, (0; 5;)){
+          print(i);
+          set i to (i + 1);
+       }
+    end
+end
+"""
+fin_code = code_simple_loop
 
 class Compiler:
     def __init__(self, path):
@@ -151,7 +161,7 @@ class Compiler:
 
 
 def let_test():
-    tokens = Tokenizer.Tokenizer().tokenize(code_simple_if_else)
+    tokens = Tokenizer.Tokenizer().tokenize(fin_code)
     #print("Tokens:", tokens)
     parser = Parser.Parser(tokens)
     programm = parser.parse()
