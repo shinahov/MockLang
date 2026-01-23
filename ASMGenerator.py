@@ -63,7 +63,7 @@ class ASMGenerator:
         self.asm_instructions.append("    mov ARG, SP")  # arg
         self.asm_instructions.append("    xor THIS, THIS")  # this = 0
         self.write_ln()
-        self.asm_instructions.append("    jmp vm_start")
+        self.call_vm_start()
 
     def write_ln(self):
         self.asm_instructions.append("")
@@ -124,7 +124,9 @@ class ASMGenerator:
         if is_main_function(func_name):
             self.asm_instructions.append("vm_start:")
         else:
-            self.asm_instructions.append(f"{func_name}:")
+            class_name, func_name = func_name.split(".")
+            print(func_name)
+            self.asm_instructions.append(f"{class_name}_{func_name}:")
         self.create_stack_frame(nlocals)
 
     def push(self, parts):
@@ -338,6 +340,12 @@ class ASMGenerator:
     def label(self, func_name):
         first, second = func_name.split(".")
         return (f"{first}_{second}")
+
+    def call_vm_start(self):
+        self.call_function("vm.start", 0)
+        self.asm_instructions.append("    mov eax, 0")
+        self.asm_instructions.append("    leave")
+        self.asm_instructions.append("    ret")
 
 
 

@@ -75,6 +75,22 @@ code_simple = """class Test :
 end
 """
 
+code_func_call = """class Test :
+    fn function_print(zahl: int) -> :
+       create int c;
+       set c to zahl;
+       print(c);
+    end
+       
+    fn main() -> void:
+       create int a = 10;
+       create int b = 50;
+       function_print(a);
+       function_print(b);
+    end
+end
+"""
+
 
 class Compiler:
     def __init__(self, path):
@@ -92,7 +108,7 @@ class Compiler:
 
 
 def let_test():
-    tokens = Tokenizer.Tokenizer().tokenize(code_simple)
+    tokens = Tokenizer.Tokenizer().tokenize(code_func_call)
     #print("Tokens:", tokens)
     parser = Parser.Parser(tokens)
     programm = parser.parse()

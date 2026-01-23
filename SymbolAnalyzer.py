@@ -110,9 +110,15 @@ class SymbolAnalyzer:
             colon_tok = args[i + 1]
             type_tok = args[i + 2]
 
-            assert ident_tok.type == "IDENT"
-            assert colon_tok.type == "COLON"
-            assert type_tok.type.startswith("TYPE_")
+            assert ident_tok.type == "IDENT", (f"Arg #{i // 3}: "
+                                               f"expected IDENT, got {ident_tok.type} "
+                                               f"({ident_tok.value!r})")
+            assert colon_tok.type == "COLON", (f"Arg #{i // 3}: "
+                                               f"expected COLON, got {colon_tok.type} "
+                                               f"({colon_tok.value!r})")
+            assert type_tok.type.startswith(
+                "TYPE_"), (f"Arg #{i // 3}: expected TYPE_*, got "
+                           f"{type_tok.type} ({type_tok.value!r})")
 
             arg_name = ident_tok.value
             arg_type = type_tok.value
