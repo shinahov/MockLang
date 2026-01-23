@@ -66,7 +66,7 @@ class VMGenerator:
         #print("return types", return_types)
         if len(return_types) == 1 and return_types[0].type == "TYPE_VOID":
             self.instructions.append("push constant 0")
-            self.instructions.append("return")
+            self.instructions.append("return 0")
 
 
 
@@ -84,7 +84,7 @@ class VMGenerator:
         #print("return types", return_types)
         if len(return_types) == 1 and return_types[0].type == "TYPE_VOID":
             self.instructions.append("push constant 0")
-            self.instructions.append("return")
+            self.instructions.append("return 0")
 
 
     def generate_create_statement(self, crate_stmt):
@@ -299,7 +299,7 @@ class VMGenerator:
 
 
     def generate_set_statement(self, set_stmt, method_name):
-        print("set statement:")
+        #print("set statement:")
         Parser.pretty_print(set_stmt)
         #print("len of set statement", len(set_stmt))
         if len(set_stmt) == 3:
@@ -309,7 +309,7 @@ class VMGenerator:
             expr = set_stmt[2].value
             self.generate_expression(expr)
             if calss_var.type == "IDENT":
-                print("set statment with 3 ", set_stmt)
+                #print("set statment with 3 ", set_stmt)
                 pass # TODO: implement normal set
 
 
@@ -346,8 +346,10 @@ class VMGenerator:
         self.instructions.append(f"call print.{type} 1")
 
     def generate_return_statement(self, return_stmt):
+        count = len(return_stmt)
+        #print("return statement with", count, "expressions in ", return_stmt)
         for expr in return_stmt:
-            print("expressions in return", expr)
+            #print("expressions in return", expr)
             if len(expr) == 1:
                 self.write_value(expr[0])
             elif len(expr) == 2:
@@ -367,7 +369,7 @@ class VMGenerator:
                     slot = self.symbol_table_manager.lookup(expr[1].value)
                     self.push_symbol(f"local {slot.slot}")
 
-        self.instructions.append("return")
+        self.instructions.append(f"return {count}")
 
 
 
@@ -436,7 +438,7 @@ class VMGenerator:
                 self.pop_symbol("this " + str(args))
                 args += 1
         self.push_symbol("pointer 0")
-        self.instructions.append("return")
+        self.instructions.append(f"return 1")
 
 
 

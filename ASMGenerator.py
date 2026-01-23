@@ -33,6 +33,8 @@ class ASMGenerator:
         self.create_alias()
         self.write_ln()
         self.asm_instructions.append("global main")
+        # Mem alloc stubben
+        self.asm_instructions.append("global Memory_alloc")
         self.asm_instructions.append("extern printf")
         self.write_ln()
         self.asm_instructions.append("section .data")
@@ -52,6 +54,7 @@ class ASMGenerator:
         self.write_ln()
 
     def runtime_setup(self):
+        self.stubb_mem_alloc()
         self.asm_instructions.append("main:")
         self.asm_instructions.append("    push rbp")
         self.asm_instructions.append("    mov rbp, rsp")
@@ -105,7 +108,9 @@ class ASMGenerator:
                     self.call_function(func_name, nargs)
 
             elif cmd == "return":
-                self.write_return()
+                count = int(parts[1])
+                #print(f"Return with count {count} not implemented yet.")
+                self.write_return(count)
 
             elif cmd == "function":
                 if len(parts) != 3:
@@ -218,8 +223,48 @@ class ASMGenerator:
         self.asm_instructions.append("    sub SP, 8  ; decrement stack pointer")
         self.asm_instructions.append("    mov rax , [SP]  ; pop value into rax")
 
-    def write_return(self):
-        pass # TODO: implement return
+    def write_return(self, count: int):
+
+        if count < 0:
+            raise ValueError("count must be >= 0")
+
+        loop_label = f"RET_COPY_LOOP{self.label_count}"
+        done_label = f"RET_COPY_DONE{self.label_count}"
+        self.label_count += 1
+
+        # Save frame and return address (your layout: RET at [FRAME - 32])
+        self.asm_instructions.append("    mov FRAME, LCL")
+        self.asm_instructions.append("    mov RET, [FRAME - 32]")
+
+        # Save source/destination bases before restoring registers
+        # rax = address of local segment base (source of return values)
+        # TEMP = address of argument segment base (destination in caller)
+        self.asm_instructions.append("    mov rax, LCL")
+        self.asm_instructions.append("    mov TEMP, ARG")
+
+        # Restore saved registers from the call frame (your layout)
+        self.asm_instructions.append("    mov THIS, [FRAME - 8]")
+        self.asm_instructions.append("    mov ARG,  [FRAME - 16]")
+        self.asm_instructions.append("    mov LCL,  [FRAME - 24]")
+
+        # Copy `count` qwords: [rax + i*8] -> [TEMP + i*8]
+        self.asm_instructions.append(f"    mov rcx, {count}")
+        self.asm_instructions.append(f"{loop_label}:")
+        self.asm_instructions.append("    test rcx, rcx")
+        self.asm_instructions.append(f"    jz {done_label}")
+        self.asm_instructions.append("    dec rcx")
+        self.asm_instructions.append("    mov rbx, [rax + rcx*8]")
+        self.asm_instructions.append("    mov [TEMP + rcx*8], rbx")
+        self.asm_instructions.append(f"    jmp {loop_label}")
+
+        self.asm_instructions.append(f"{done_label}:")
+
+        # Set SP for caller: SP = (old ARG base) + count*8
+        self.asm_instructions.append(f"    lea SP, [TEMP + {count * 8}]")
+
+        # Jump back
+        self.asm_instructions.append("    jmp RET")
+        self.write_ln()
 
     def terminate_program(self):
         self.asm_instructions.append("    mov eax, 0")
@@ -278,11 +323,21 @@ class ASMGenerator:
         self.asm_instructions.append("    mov LCL, SP")
 
         # Jump to function
-        self.asm_instructions.append(f"    jmp {func_name}")
+        self.asm_instructions.append(f"    jmp {self.label(func_name)}")
 
         # Declare return label
         self.asm_instructions.append(f"{return_label}:")
         self.write_ln()
+
+    def stubb_mem_alloc(self):
+        self.asm_instructions.append("Memory_alloc:")
+        self.write_ln()
+        self.asm_instructions.append("    xor rax, rax")
+        self.asm_instructions.append("    ret")
+
+    def label(self, func_name):
+        first, second = func_name.split(".")
+        return (f"{first}_{second}")
 
 
 
