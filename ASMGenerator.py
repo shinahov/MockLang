@@ -121,7 +121,7 @@ class ASMGenerator:
                 self.write_fn_label(func_name, nlocals)
 
             elif self.compare_arithmetic(cmd):
-                self.write_cmp_arithmetic_header(cmd)
+                self.write_cmp_arithmetic(cmd)
 
             elif cmd == "if-goto":
                 if len(parts) != 2:
@@ -380,12 +380,30 @@ class ASMGenerator:
         if cmd in ("eq", "gt", "lt"):
             return True
 
-    def write_cmp_arithmetic_header(self, cmd):
+    def write_cmp_arithmetic(self, cmd):
+        # pop y, pop x, cmp
         self.asm_instructions.append("    sub SP, 8  ; decrement stack pointer")
         self.asm_instructions.append("    mov rbx, [SP]  ; pop y")
         self.asm_instructions.append("    sub SP, 8  ; decrement stack pointer")
         self.asm_instructions.append("    mov rax, [SP]  ; pop x")
         self.asm_instructions.append("    cmp rax, rbx    ; compare x and y")
+
+        # rax = 0/1 depending on cmd
+        self.asm_instructions.append("    mov eax, 0       ; default result = 0")
+
+        if cmd == "eq":
+            self.asm_instructions.append("    sete al         ; al = 1 if x == y")
+        elif cmd == "lt":
+            self.asm_instructions.append("    setl al         ; al = 1 if x < y (signed)")
+        elif cmd == "gt":
+            self.asm_instructions.append("    setg al         ; al = 1 if x > y (signed)")
+        else:
+            raise ValueError(cmd)
+
+        # push result
+        self.asm_instructions.append("    mov [SP], rax   ; push result")
+        self.asm_instructions.append("    add SP, 8       ; increment stack pointer")
+
 
 
 

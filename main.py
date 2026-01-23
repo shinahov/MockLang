@@ -122,6 +122,18 @@ code_if_else = """class Test :
 end
 """
 
+code_simple_if_else = """class Test :
+    fn main() -> void:
+       create int a = 3;
+       if(a =? 5){
+          print(100);
+       } else {
+          print(200);
+       }
+    end
+end
+"""
+
 
 class Compiler:
     def __init__(self, path):
@@ -139,7 +151,7 @@ class Compiler:
 
 
 def let_test():
-    tokens = Tokenizer.Tokenizer().tokenize(code_if_else)
+    tokens = Tokenizer.Tokenizer().tokenize(code_simple_if_else)
     #print("Tokens:", tokens)
     parser = Parser.Parser(tokens)
     programm = parser.parse()
