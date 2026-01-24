@@ -248,6 +248,8 @@ class VMGenerator:
         elif param.type == "IDENT":
             symbol = self.parse_symbol(param.value)
             self.instructions.append(f"push {symbol}")
+        elif param.type == "SELF":
+            self.instructions.append("push pointer 0")
         else:
             raise Exception(f"Unsupported parameter type '{param.type}'")
 
