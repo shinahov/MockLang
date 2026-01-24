@@ -51,6 +51,7 @@ class ASMGenerator:
 
     def add_bss_section(self):
         self.asm_instructions.append("section .bss")
+        self.asm_instructions.append("vm_temp: resq 8")
         self.asm_instructions.append("vm_stack: resq 1024")
         self.asm_instructions.append("heap:     resb 65536")
         self.asm_instructions.append("heap_ptr: resq 1")
@@ -116,6 +117,8 @@ class ASMGenerator:
                     self.write_print_int(parts)
                 elif func_name == "print.String" and nargs == 1:
                     self.write_print_string()
+                elif func_name == "Memory.alloc" and nargs == 1:
+                    self.write_memory_alloc()
                 else:
                     self.call_function(func_name, nargs)
 
@@ -187,9 +190,11 @@ class ASMGenerator:
         elif segment == "this":
             self.push_this(index)
         elif segment == "pointer":
-            self.push_this(index)  # pointer 0 is this
+            self.push_pointer(index)
         elif segment == "string":
             self.push_string(parts[2:])
+        elif segment == "temp":
+            self.push_temp(index)
         elif segment == "that":
             pass # dont have that segment implemented yet
         else:
@@ -219,6 +224,12 @@ class ASMGenerator:
         self.asm_instructions.append(f"    add SP, 8  ; increment stack pointer")
         self.write_ln()
 
+    def push_temp(self, index):
+        self.asm_instructions.append(f"    mov rax, [rel vm_temp + {index}*8]")
+        self.asm_instructions.append(f"    mov [SP], rax")
+        self.asm_instructions.append(f"    add SP, 8  ; increment stack pointer")
+        self.write_ln()
+
     def write_print_string(self):
         self.pop_rax()
         self.asm_instructions.append("    mov rsi, rax")
@@ -242,6 +253,11 @@ class ASMGenerator:
             self.pop_argument(index)
         elif segment == "this":
             self.pop_this(index)
+        elif segment == "pointer":
+            self.pop_pointer(index)
+        elif segment == "temp":
+            self.pop_temp(index)
+
         elif segment == "that":
             pass
 
@@ -261,6 +277,12 @@ class ASMGenerator:
         self.asm_instructions.append(f"    sub SP, 8  ; decrement stack pointer")
         self.asm_instructions.append(f"    mov rax, [SP]")
         self.asm_instructions.append(f"    mov [THIS + {int(index) * 8}], rax")
+        self.write_ln()
+
+    def pop_temp(self, index):
+        self.asm_instructions.append(f"    sub SP, 8  ; decrement stack pointer")
+        self.asm_instructions.append(f"    mov rax, [SP]")
+        self.asm_instructions.append(f"    mov [rel vm_temp + {int(index) * 8}], rax")
         self.write_ln()
 
     def push_rax(self):
@@ -296,7 +318,7 @@ class ASMGenerator:
         # rax = address of local segment base (source of return values)
         # TEMP = address of argument segment base (destination in caller)
         self.asm_instructions.append("    mov rax, LCL")
-        self.asm_instructions.append("    mov TEMP, ARG")
+        self.asm_instructions.append("    mov r8, ARG")
 
         # Restore saved registers from the call frame (your layout)
         self.asm_instructions.append("    mov THIS, [FRAME - 8]")
@@ -310,13 +332,13 @@ class ASMGenerator:
         self.asm_instructions.append(f"    jz {done_label}")
         self.asm_instructions.append("    dec rcx")
         self.asm_instructions.append("    mov rbx, [rax + rcx*8]")
-        self.asm_instructions.append("    mov [TEMP + rcx*8], rbx")
+        self.asm_instructions.append("    mov [r8 + rcx*8], rbx")
         self.asm_instructions.append(f"    jmp {loop_label}")
 
         self.asm_instructions.append(f"{done_label}:")
 
         # Set SP for caller: SP = (old ARG base) + count*8
-        self.asm_instructions.append(f"    lea SP, [TEMP + {count * 8}]")
+        self.asm_instructions.append(f"    lea SP, [r8 + {count * 8}]")
 
         # Jump back
         self.asm_instructions.append("    jmp RET")
@@ -349,7 +371,7 @@ class ASMGenerator:
         self.asm_instructions.append("%define THIS  r15")
         self.asm_instructions.append("%define FRAME r10")
         self.asm_instructions.append("%define RET   r11")
-        self.asm_instructions.append("%define TEMP  r9")
+        #self.asm_instructions.append("%define TEMP  r9")
         self.write_ln()
 
     def call_function(self, func_name, nargs):
@@ -370,10 +392,10 @@ class ASMGenerator:
         self.asm_instructions.append("    add SP, 8  ; increment stack pointer")
 
         # Reposition ARG
-        self.asm_instructions.append("    mov TEMP, SP")
-        self.asm_instructions.append(f"    sub TEMP, {nargs * 8}")
-        self.asm_instructions.append("    sub TEMP, 32")  # 4*8 (RET + LCL + ARG + THIS)
-        self.asm_instructions.append("    mov ARG, TEMP")
+        self.asm_instructions.append("    mov r8, SP")
+        self.asm_instructions.append(f"    sub r8, {nargs * 8}")
+        self.asm_instructions.append("    sub r8, 32")  # 4*8 (RET + LCL + ARG + THIS)
+        self.asm_instructions.append("    mov ARG, r8")
 
         # Reposition LCL
         self.asm_instructions.append("    mov LCL, SP")
@@ -505,5 +527,36 @@ class ASMGenerator:
         str_value = s.strip('"')
         str_length = len(str_value)
         return str_length, str_value
+
+    def write_memory_alloc(self):
+        self.pop_rax()
+        self.asm_instructions.append("    mov rdi, rax                 ; rdi = size")
+        self.asm_instructions.append("    shl rdi , 3                  ; bytes = size * 8")
+        self.asm_instructions.append("    call Memory_alloc_bytes      ; rax = dst pointer")
+        self.write_ln()
+
+        self.push_rax()
+
+    def push_pointer(self, index):
+        if index == "0":
+            self.asm_instructions.append(f"    mov rax, THIS")
+        elif index == "1":
+            pass # dont have THAT segment implemented yet
+        else:
+            raise ValueError(f"Invalid pointer index: {index}")
+
+        self.asm_instructions.append(f"    mov [SP], rax")
+        self.asm_instructions.append(f"    add SP, 8  ; increment stack pointer")
+        self.write_ln()
+
+    def pop_pointer(self, index):
+        self.asm_instructions.append(f"    sub SP, 8  ; decrement stack pointer")
+        self.asm_instructions.append(f"    mov rax, [SP]")
+
+        if index == "0":
+            self.asm_instructions.append(f"    mov THIS, rax")
+        elif index == "1":
+            pass # dont have THAT segment implemented yet
+
 
 

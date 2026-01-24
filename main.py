@@ -152,9 +152,18 @@ code_string_print = """class Test :
 end
 """
 
+code_obj_field_access = """class Person [name:String, age:int]:
+    fn main() -> void:
+         create Person p = Person("Alice", 30);
+            print(p.name);
+            print(p.age);
+    end
+end
+"""
 
 
-fin_code = code_string_print
+
+fin_code = code_obj_field_access
 
 class Compiler:
     def __init__(self, path):
