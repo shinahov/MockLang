@@ -129,6 +129,7 @@ class VMGenerator:
 
     def parse_symbol(self, var_name):
         symbol = self.symbol_table_manager.table.lookup(var_name)
+        print("the symbol: ",symbol)
         #print(self.symbol_table_manager.table)
         if symbol is None:
             raise Exception(f"Undefined variable '{var_name}'")
@@ -141,7 +142,7 @@ class VMGenerator:
             segment = "argument"
         else:
             raise Exception(f"Unsupported symbol type for '{var_name}'")
-        return (f"{segment} {symbol.slot}")
+        return f"{segment} {symbol.slot}"
 
     def generate_expression(self, expr):
         print("generating expression", expr)
@@ -170,22 +171,14 @@ class VMGenerator:
         #print("expression parts!!!!!!!!!:    ", parts)
         if len(parts) == 3:
             left, middle, right = parts
-            #print("complex expression parts:", left, middle, right)
+            print("complex expression parts:", left, middle, right)
 
             if middle.type == "OPERATOR":
                 operator = middle.value
-                self.generate_expression(left)
-                self.generate_expression(right)
-                if operator == "+":
-                    self.instructions.append("add")
-                elif operator == "-":
-                    self.instructions.append("sub")
-                elif operator == "*":
-                    self.instructions.append("call Math.multiply 2")
-                elif operator == "/":
-                    self.instructions.append("call Math.divide 2")
-                else:
-                    raise Exception(f"Unsupported operator '{operator}' in expression")
+                left_type = self.generate_expression(left)
+                right_type = self.generate_expression(right)
+                print("left type:", left_type, "right type:", right_type)
+                self.parse_operator(operator, left_type, right_type)
 
             # COMPARATOR: =? < > ...
             elif middle.type == "COMPERATOR":
@@ -223,6 +216,7 @@ class VMGenerator:
                     self.pop_symbol("pointer 0")
                     self.instructions.append(f"push this {slot.slot}")
                     self.restore_this_pointer()
+
                 else:
                     raise Exception(f"Unsupported right side of DOT: {right}")
 
@@ -238,16 +232,36 @@ class VMGenerator:
         #print("complex expression", expr)
         raise Exception("Complex expressions are not supported yet expr: " + repr(expr))
 
+    def parse_operator(self, operator, left_type, right_type):
+        float_float = left_type == "float" and right_type == "float"
+        int_float = (left_type == "int" and right_type == "float")
+        float_int = (left_type == "float" and right_type == "int")
+        int_int = left_type == "int" and right_type == "int"
+        if operator == "+":
+            self.instructions.append("add")
+        elif operator == "-":
+            self.instructions.append("sub")
+        elif operator == "*":
+            self.instructions.append("call Math.multiply 2")
+        elif operator == "/":
+            self.instructions.append("call Math.divide 2")
+        else:
+            raise Exception(f"Unsupported operator '{operator}' in expression")
+
     def write_value(self, param):
         if param.type == "INT":
             self.instructions.append(f"push constant {param.value}")
+            return "int"
         elif param.type == "FLOAT":
             self.instructions.append(f"push constant {param.value}")
+            return "float"
         elif param.type == "STRING":
             self.instructions.append(f'push string "{param.value}"')
+
         elif param.type == "IDENT":
             symbol = self.parse_symbol(param.value)
             self.instructions.append(f"push {symbol}")
+            return self.get_type(param)
         elif param.type == "SELF":
             self.instructions.append("push pointer 0")
         else:
@@ -586,6 +600,12 @@ class VMGenerator:
     def restore_this_pointer(self):
         self.push_symbol("temp 0")
         self.pop_symbol("pointer 0")
+
+    def get_type(self, param):
+        symbol = self.symbol_table_manager.lookup(param.value)
+        if symbol is None:
+            raise Exception(f"Undefined variable '{param.value}'")
+        return symbol.data_type
 
 
 

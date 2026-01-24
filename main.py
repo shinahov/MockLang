@@ -176,10 +176,22 @@ code_method_field_access = """class Person [name:String, age:int, email:String]:
 end
 """
 
+code_float_operations = """class Test :
+    fn main() -> void:
+        create float a = 5.5;
+        create float b = 2.0;
+        create float c;
+        set c to a + b;
+        print(c+1.5);
+        print(a - b);
+    end
+end
+"""
 
 
 
-fin_code = code_method_field_access
+
+fin_code = code_float_operations
 
 class Compiler:
     def __init__(self, path):
