@@ -43,6 +43,7 @@ class ASMGenerator:
         self.asm_instructions.append("section .data")
         self.asm_instructions.append('fmt_int db "%d", 10, 0')
         self.asm_instructions.append('fmt_str db "%s", 10, 0')
+        self.asm_instructions.append('fmt_float db "%f", 10, 0')
         self.data_insert_pos = len(self.asm_instructions)
         self.write_ln()
         self.add_bss_section()
@@ -115,6 +116,8 @@ class ASMGenerator:
 
                 if func_name == "print.int" and nargs == 1:
                     self.write_print_int(parts)
+                elif func_name == "print.float" and nargs == 1:
+                    self.write_print_float()
                 elif func_name == "print.String" and nargs == 1:
                     self.write_print_string()
                 elif func_name == "Memory.alloc" and nargs == 1:
@@ -557,6 +560,19 @@ class ASMGenerator:
             self.asm_instructions.append(f"    mov THIS, rax")
         elif index == "1":
             pass # dont have THAT segment implemented yet
+
+    def write_print_float(self):
+        self.pop_rax()
+        self.asm_instructions.append("    cvtsi2sd xmm0, rax        ; convert int to double")
+        self.asm_instructions.append("    mov rbx, 65536")
+        self.asm_instructions.append("    cvtsi2sd xmm1, rbx        ; convert int to double (65536)")
+        self.asm_instructions.append("    divsd xmm0, xmm1          ; divide by 65536 to get float")
+
+        self.asm_instructions.append("    lea rdi, [fmt_float]")
+        self.asm_instructions.append("    xor eax, eax")
+        self.asm_instructions.append("    sub rsp, 8                 ; align stack for printf")
+        self.asm_instructions.append("    call printf")
+        self.asm_instructions.append("    add rsp, 8")
 
 
 
