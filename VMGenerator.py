@@ -233,20 +233,47 @@ class VMGenerator:
         raise Exception("Complex expressions are not supported yet expr: " + repr(expr))
 
     def parse_operator(self, operator, left_type, right_type):
-        float_float = left_type == "float" and right_type == "float"
-        int_float = (left_type == "int" and right_type == "float")
-        float_int = (left_type == "float" and right_type == "int")
-        int_int = left_type == "int" and right_type == "int"
-        if operator == "+":
-            self.instructions.append("add")
-        elif operator == "-":
-            self.instructions.append("sub")
-        elif operator == "*":
-            self.instructions.append("call Math.multiply 2")
-        elif operator == "/":
-            self.instructions.append("call Math.divide 2")
-        else:
-            raise Exception(f"Unsupported operator '{operator}' in expression")
+        def is_int(t: str) -> bool:
+            return t == "int"
+
+        def is_float(t: str) -> bool:
+            return t == "float"
+
+        def key(op: str, lt: str, rt: str) -> tuple[str, str, str]:
+            if not (is_int(lt) or is_float(lt)):
+                raise Exception(f"Unsupported left type '{lt}'")
+            if not (is_int(rt) or is_float(rt)):
+                raise Exception(f"Unsupported right type '{rt}'")
+            return (op, lt, rt)
+
+        dispatch = {
+            ("+", "int", "int"): "add",
+            ("+", "float", "float"): "faddf",
+            ("+", "float", "int"): "fadd",
+            ("+", "int", "float"): "addf",
+
+            ("-", "int", "int"): "sub",
+            ("-", "float", "float"): "fsubf",
+            ("-", "float", "int"): "fsub",
+            ("-", "int", "float"): "subf",
+
+            ("*", "int", "int"): "call Math.multiply 2",
+            ("*", "float", "float"): "call Math.fmultiply 2",
+            ("*", "float", "int"): "call Math.fmultiply 2",
+            ("*", "int", "float"): "call Math.fmultiply 2",
+
+            ("/", "int", "int"): "call Math.divide 2",
+            ("/", "float", "float"): "call Math.fdivide 2",
+            ("/", "float", "int"): "call Math.fdivide 2",
+            ("/", "int", "float"): "call Math.fdivide 2",
+        }
+
+        k = key(operator, left_type, right_type)
+        instr = dispatch.get(k)
+        if instr is None:
+            raise Exception(f"Unsupported operator/type combo: {k}")
+
+        self.instructions.append(instr)
 
     def write_value(self, param):
         if param.type == "INT":
