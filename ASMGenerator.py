@@ -189,6 +189,14 @@ class ASMGenerator:
                     self.write_math_multiply_inline()
                 elif func_name == "Math.multiplyf" and nargs == 2:
                     self.write_math_multiply_inline()
+                elif func_name == "Math.divide" and nargs == 2:
+                    self.write_math_divide_inline()
+                elif func_name == "Math.fdivide" and nargs == 2:
+                    self.write_math_divide_inline()
+                elif func_name == "Math.dividef" and nargs == 2:
+                    pass
+                elif func_name == "Math.fdividef" and nargs == 2:
+                    pass
                 else:
                     self.call_function(func_name, nargs)
 
@@ -672,6 +680,20 @@ class ASMGenerator:
         self.asm_instructions.append("    shr rax, 16            ; adjust fixed-point (divide by 65536)")
         # push result
         self.push_rax()
+
+    def write_math_divide_inline(self):
+        # pop y
+        self.asm_instructions.append("    sub SP, 8")
+        self.asm_instructions.append("    mov rbx, [SP]          ; y")
+        # pop x
+        self.asm_instructions.append("    sub SP, 8")
+        self.asm_instructions.append("    mov rax, [SP]          ; x")
+        # rax = x / y
+        self.asm_instructions.append("    cqo                     ; sign-extend rax to rdx:rax")
+        self.asm_instructions.append("    idiv rbx                ; rax = x / y")
+        # push result
+        self.push_rax()
+
 
 
 

@@ -238,12 +238,34 @@ code_mult_float = """class Test :
 end
 """
 
+code_div_int_int = """class Test :
+    fn main() -> void:
+        create int a = 20;
+        create int b = 4;
+        create int c;
+        set c to a / b;
+        print(c);
+    end
+end
+"""
+
+code_div_float_int = """class Test :
+    fn main() -> void:
+        create float a = 20.0;
+        create int b = 4;
+        create float c;
+        set c to a / b;
+        print(c);
+    end
+end
+"""
 
 
 
 
 
-fin_code = code_mult_float
+
+fin_code = code_div_float_int
 
 class Compiler:
     def __init__(self, path):
