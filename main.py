@@ -282,11 +282,68 @@ code_div_float_float = """class Test :
 end
 """
 
+code_test_all = """class Test :
+
+  fn main() -> void:
+
+    print("=== INT arithmetic ===");
+    create int ia = 20;
+    create int ib = 4;
+    create int ic;
+
+    set ic to ia * ib;        print(ic);     
+    set ic to ia / ib;        print(ic);     
+    set ic to ia + ib;        print(ic);     
+    set ic to ia - ib;        print(ic);     
+
+    print("=== FLOAT arithmetic (float op float) ===");
+    create float fa = 5.5;
+    create float fb = 2.0;
+    create float fc;
+
+    set fc to fa + fb;        print(fc);     
+    set fc to fa - fb;        print(fc);     
+    set fc to fa * fb;        print(fc);     
+    set fc to fa / fb;        print(fc);     
+
+    print("=== MIXED arithmetic (float op int) ===");
+    create int ix = 3;
+    create float fm;
+
+    set fm to fa + ix;        print(fm);     
+    set fm to fa - ix;        print(fm);     
+    set fm to fa * ix;        print(fm);     
+    set fm to fa / ix;        print(fm);     
+
+    print("=== MIXED arithmetic (int op float) ===");
+    create float fy = 4.0;
+    set fm to ix + fy;        print(fm);     
+    set fm to ix - fy;        print(fm);     
+    set fm to ix * fy;        print(fm);     
+    set fm to ix / fy;        print(fm);     
+
+    print("=== BIG/decimal floats ===");
+    create float f1 = 111.5444;
+    create float f2 = 2.5;
+    set fc to f1 / f2;        print(fc);     
+
+    print("=== Comparison tests (int) ===");
+    if(20 > 4){ print(1); } else { print(0); }
+    if(20 < 4){ print(1); } else { print(0); }
+    if(20 =? 20){ print(1); } else { print(0); }
+
+    print("=== Done ===");
+  end
+
+end
+"""
 
 
 
 
-fin_code = code_div_float_float
+
+
+fin_code = code_test_all
 
 class Compiler:
     def __init__(self, path):

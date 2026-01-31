@@ -709,7 +709,7 @@ class ASMGenerator:
         # self.asm_instructions.append("    jz DIV_BY_ZERO")
         # convert x to fixed-point
         self.asm_instructions.append("    cqo                     ; sign-extend rax to rdx:rax")
-        self.asm_instructions.append("    shld rdx, rax, 16       ; x_fixed = x * 65536")
+        self.asm_instructions.append("    shld rdx, rax, 32       ; x_fixed = x * 65536")
         self.asm_instructions.append("    shl rax, 32             ; x_fixed = x * 65536")
 
         # rax = x_fixed / y
