@@ -251,8 +251,30 @@ end
 
 code_div_float_int = """class Test :
     fn main() -> void:
-        create float a = 20.0;
+        create float a = 6.0;
         create int b = 4;
+        create float c;
+        set c to a / b;
+        print(c);
+    end
+end
+"""
+
+code_div_int_float = """class Test :
+    fn main() -> void:
+        create int a = 20;
+        create float b = 4.0;
+        create float c;
+        set c to a / b;
+        print(c);
+    end
+end
+"""
+
+code_div_float_float = """class Test :
+    fn main() -> void:
+        create float a = 111.5444;
+        create float b = 2.5;
         create float c;
         set c to a / b;
         print(c);
@@ -264,8 +286,7 @@ end
 
 
 
-
-fin_code = code_div_float_int
+fin_code = code_div_float_float
 
 class Compiler:
     def __init__(self, path):

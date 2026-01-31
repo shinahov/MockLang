@@ -194,9 +194,9 @@ class ASMGenerator:
                 elif func_name == "Math.fdivide" and nargs == 2:
                     self.write_math_divide_inline()
                 elif func_name == "Math.dividef" and nargs == 2:
-                    pass
+                    self.write_math_divide_inline_int_float()
                 elif func_name == "Math.fdividef" and nargs == 2:
-                    pass
+                    self.write_math_divide_inline_float()
                 else:
                     self.call_function(func_name, nargs)
 
@@ -691,6 +691,51 @@ class ASMGenerator:
         # rax = x / y
         self.asm_instructions.append("    cqo                     ; sign-extend rax to rdx:rax")
         self.asm_instructions.append("    idiv rbx                ; rax = x / y")
+        # push result
+        self.push_rax()
+
+    def write_math_divide_inline_int_float(self):
+        # pop y (float_fixed)
+        print("DIVIDE INT FLOAT")
+         # pop y
+        self.asm_instructions.append("    sub SP, 8")
+        self.asm_instructions.append("    mov rbx, [SP]          ; y (float_fixed)")
+        # pop x (int)
+        self.asm_instructions.append("    sub SP, 8")
+        self.asm_instructions.append("    mov rax, [SP]          ; x (int)")
+
+        # optional: division by zero check TODO
+        # self.asm_instructions.append("    test rbx, rbx")
+        # self.asm_instructions.append("    jz DIV_BY_ZERO")
+        # convert x to fixed-point
+        self.asm_instructions.append("    cqo                     ; sign-extend rax to rdx:rax")
+        self.asm_instructions.append("    shld rdx, rax, 16       ; x_fixed = x * 65536")
+        self.asm_instructions.append("    shl rax, 32             ; x_fixed = x * 65536")
+
+        # rax = x_fixed / y
+        self.asm_instructions.append("    idiv rbx                 ; rax = x_fixed / y")
+        # push result
+        self.push_rax()
+
+    def write_math_divide_inline_float(self):
+        # pop y (float_fixed)
+        self.asm_instructions.append("    sub SP, 8")
+        self.asm_instructions.append("    mov rbx, [SP]          ; y (float_fixed)")
+        # pop x (float_fixed)
+        self.asm_instructions.append("    sub SP, 8")
+        self.asm_instructions.append("    mov rax, [SP]          ; x (float_fixed)")
+
+        # optional: division by zero check TODO
+        # self.asm_instructions.append("    test rbx, rbx")
+        # self.asm_instructions.append("    jz DIV_BY_ZERO")
+
+        # convert x to higher precision fixed-point
+        self.asm_instructions.append("    cqo                     ; sign-extend rax to rdx:rax")
+        self.asm_instructions.append("    shld rdx, rax, 16       ; x_high = x * 65536")
+        self.asm_instructions.append("    shl rax, 16             ; x_high = x * 65536")
+
+        # rax = x_high / y
+        self.asm_instructions.append("    idiv rbx                 ; rax = x_high / y")
         # push result
         self.push_rax()
 
