@@ -91,7 +91,15 @@ class ASMGenerator:
             elif cmd == "pop":
                 self.pop(parts)
 
-            elif cmd == "add":
+            elif cmd == "add" :
+                self.asm_instructions.append("    sub SP, 8  ; decrement stack pointer")
+                self.asm_instructions.append("    mov rbx, [SP]  ; pop y")
+                self.asm_instructions.append("    sub SP, 8  ; decrement stack pointer")
+                self.asm_instructions.append("    mov rax, [SP]  ; pop x")
+                self.asm_instructions.append("    add rax, rbx    ; x + y")
+                self.push_rax()
+
+            elif cmd == "faddf":
                 self.asm_instructions.append("    sub SP, 8  ; decrement stack pointer")
                 self.asm_instructions.append("    mov rbx, [SP]  ; pop y")
                 self.asm_instructions.append("    sub SP, 8  ; decrement stack pointer")
@@ -100,6 +108,14 @@ class ASMGenerator:
                 self.push_rax()
 
             elif cmd == "sub":
+                self.asm_instructions.append("    sub SP, 8  ; decrement stack pointer")
+                self.asm_instructions.append("    mov rax, [SP]  ; pop y")
+                self.asm_instructions.append("    sub SP, 8  ; decrement stack pointer")
+                self.asm_instructions.append("    mov rbx, [SP]  ; pop x")
+                self.asm_instructions.append("    sub rbx, rax    ; x - y")
+                self.push_rbx()
+
+            elif cmd == "fsubf":
                 self.asm_instructions.append("    sub SP, 8  ; decrement stack pointer")
                 self.asm_instructions.append("    mov rax, [SP]  ; pop y")
                 self.asm_instructions.append("    sub SP, 8  ; decrement stack pointer")
@@ -185,7 +201,14 @@ class ASMGenerator:
         #print(segment, index)
 
         if segment == "constant":
-            self.push_constant(index)
+            # if float do * 65536
+            if '.' in index:
+                float_value = float(index)
+                int_value = int(float_value * 65536)
+                #print(f"Converting float {float_value} to int {int_value} for push constant")
+                self.push_constant(int_value)
+            else:
+                self.push_constant(index)
         elif segment == "local":
             self.push_local(index)
         elif segment == "argument":
@@ -569,10 +592,10 @@ class ASMGenerator:
         self.asm_instructions.append("    divsd xmm0, xmm1          ; divide by 65536 to get float")
 
         self.asm_instructions.append("    lea rdi, [fmt_float]")
-        self.asm_instructions.append("    xor eax, eax")
-        self.asm_instructions.append("    sub rsp, 8                 ; align stack for printf")
+        self.asm_instructions.append("    mov eax, 1")
+        #self.asm_instructions.append("    sub rsp, 8                 ; align stack for printf")
         self.asm_instructions.append("    call printf")
-        self.asm_instructions.append("    add rsp, 8")
+        #self.asm_instructions.append("    add rsp, 8")
 
 
 

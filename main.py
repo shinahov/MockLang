@@ -176,6 +176,14 @@ code_method_field_access = """class Person [name:String, age:int, email:String]:
 end
 """
 
+code_float_simple = """class Test :
+    fn main() -> void:
+        create float a = 5.5;
+        print(a);
+    end
+end
+"""
+
 code_float_operations = """class Test :
     fn main() -> void:
         create float a = 5.5;
@@ -184,9 +192,12 @@ code_float_operations = """class Test :
         set c to a + b;
         print(c+1.5);
         print(a - b);
+        print(a + b);
     end
 end
 """
+
+
 
 
 
