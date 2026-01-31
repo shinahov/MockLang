@@ -258,14 +258,14 @@ class VMGenerator:
             ("-", "int", "float"): "subf",
 
             ("*", "int", "int"): "call Math.multiply 2",
-            ("*", "float", "float"): "call Math.fmultiply 2",
+            ("*", "float", "float"): "call Math.fmultiplyf 2",
             ("*", "float", "int"): "call Math.fmultiply 2",
-            ("*", "int", "float"): "call Math.fmultiply 2",
+            ("*", "int", "float"): "call Math.multiplyf 2",
 
             ("/", "int", "int"): "call Math.divide 2",
-            ("/", "float", "float"): "call Math.fdivide 2",
+            ("/", "float", "float"): "call Math.fdividef 2",
             ("/", "float", "int"): "call Math.fdivide 2",
-            ("/", "int", "float"): "call Math.fdivide 2",
+            ("/", "int", "float"): "call Math.dividef 2",
         }
 
         k = key(operator, left_type, right_type)

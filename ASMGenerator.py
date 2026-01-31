@@ -181,6 +181,14 @@ class ASMGenerator:
                     self.write_print_string()
                 elif func_name == "Memory.alloc" and nargs == 1:
                     self.write_memory_alloc()
+                elif func_name == "Math.multiply" and nargs == 2:
+                    self.write_math_multiply_inline()
+                elif func_name == "Math.fmultiplyf" and nargs == 2:
+                    self.write_math_multiply_inline_float()
+                elif func_name == "Math.fmultiply" and nargs == 2:
+                    self.write_math_multiply_inline()
+                elif func_name == "Math.multiplyf" and nargs == 2:
+                    self.write_math_multiply_inline()
                 else:
                     self.call_function(func_name, nargs)
 
@@ -639,6 +647,33 @@ class ASMGenerator:
         #self.asm_instructions.append("    sub rsp, 8                 ; align stack for printf")
         self.asm_instructions.append("    call printf")
         #self.asm_instructions.append("    add rsp, 8")
+
+    def write_math_multiply_inline(self):
+        # pop y
+        self.asm_instructions.append("    sub SP, 8")
+        self.asm_instructions.append("    mov rbx, [SP]          ; y")
+        # pop x
+        self.asm_instructions.append("    sub SP, 8")
+        self.asm_instructions.append("    mov rax, [SP]          ; x")
+        # rax = x * y
+        self.asm_instructions.append("    imul rax, rbx          ; x*y")
+        # push result
+        self.push_rax()
+
+    def write_math_multiply_inline_float(self):
+        # pop y
+        self.asm_instructions.append("    sub SP, 8")
+        self.asm_instructions.append("    mov rbx, [SP]          ; y")
+        # pop x
+        self.asm_instructions.append("    sub SP, 8")
+        self.asm_instructions.append("    mov rax, [SP]          ; x")
+        # rax = x * y
+        self.asm_instructions.append("    imul rbx               ; x*y in rdx:rax")
+        self.asm_instructions.append("    shr rax, 16            ; adjust fixed-point (divide by 65536)")
+        # push result
+        self.push_rax()
+
+
 
 
 

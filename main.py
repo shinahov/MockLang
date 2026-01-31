@@ -208,12 +208,42 @@ code_mixed_types = """class Test :
 end
 """
 
+code_mult_int = """class Test :
+    fn main() -> void:
+        create int a = 6;
+        create int b = 7;
+        create int c;
+        set c to a * b;
+        print(c);
+    end
+end
+"""
+
+code_mult_float = """class Test :
+    fn main() -> void:
+        create float a = 5.5;
+        create int b = 3;
+        create float f = 2.0;
+        create float c;
+        create float d;
+        create float e;
+        set c to a * b;
+        set d to b * a;
+        set e to a * f;
+        print(c);
+        print(d);
+        print("Float multiplication: ");
+        print(e);
+    end
+end
+"""
 
 
 
 
 
-fin_code = code_mixed_types
+
+fin_code = code_mult_float
 
 class Compiler:
     def __init__(self, path):
