@@ -123,6 +123,49 @@ class ASMGenerator:
                 self.asm_instructions.append("    sub rbx, rax    ; x - y")
                 self.push_rbx()
 
+
+            elif cmd == "fadd":
+                # y = int, x = float_fixed
+                self.asm_instructions.append("    sub SP, 8")
+                self.asm_instructions.append("    mov rbx, [SP]          ; y (int)")
+                self.asm_instructions.append("    shl rbx, 16            ; y -> fixed")
+                self.asm_instructions.append("    sub SP, 8")
+                self.asm_instructions.append("    mov rax, [SP]          ; x (float_fixed)")
+                self.asm_instructions.append("    add rax, rbx           ; x + y_fixed")
+                self.push_rax()
+
+            elif cmd == "fsub":
+                # y = int, x = float_fixed
+                self.asm_instructions.append("    sub SP, 8")
+                self.asm_instructions.append("    mov rbx, [SP]          ; y (int)")
+                self.asm_instructions.append("    shl rbx, 16            ; y -> fixed")
+                self.asm_instructions.append("    sub SP, 8")
+                self.asm_instructions.append("    mov rax, [SP]          ; x (float_fixed)")
+                self.asm_instructions.append("    sub rax, rbx           ; x - y_fixed")
+                self.push_rax()
+
+
+            elif cmd == "addf":
+                # y = float_fixed, x = int
+                self.asm_instructions.append("    sub SP, 8")
+                self.asm_instructions.append("    mov rbx, [SP]          ; y (float_fixed)")
+                self.asm_instructions.append("    sub SP, 8")
+                self.asm_instructions.append("    mov rax, [SP]          ; x (int)")
+                self.asm_instructions.append("    shl rax, 16            ; x -> fixed")
+                self.asm_instructions.append("    add rax, rbx           ; x_fixed + y")
+                self.push_rax()
+
+            elif cmd == "subf":
+                self.asm_instructions.append("    sub SP, 8")
+                self.asm_instructions.append("    mov rbx, [SP]          ; y (float_fixed)")
+                self.asm_instructions.append("    sub SP, 8")
+                self.asm_instructions.append("    mov rax, [SP]          ; x (int)")
+                self.asm_instructions.append("    shl rax, 16            ; x -> fixed")
+                self.asm_instructions.append("    sub rax, rbx           ; x_fixed - y")
+                self.push_rax()
+
+
+
             elif cmd == "call":
                 if len(parts) != 3:
                     raise ValueError(f"Invalid call instruction: {instr}")

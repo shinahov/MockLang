@@ -197,12 +197,23 @@ code_float_operations = """class Test :
 end
 """
 
+code_mixed_types = """class Test :
+    fn main() -> void:
+        create int a = 10;
+        create float b = 2.5;
+        create float c;
+        set c to a + b;
+        print(c);
+    end
+end
+"""
 
 
 
 
 
-fin_code = code_float_operations
+
+fin_code = code_mixed_types
 
 class Compiler:
     def __init__(self, path):
