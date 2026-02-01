@@ -65,6 +65,7 @@ class ASMGenerator:
     def runtime_setup(self):
         self.stubb_mem_alloc()
         self.mem_alloc_bytes()
+        self.write_div_by_zero_label()
         self.asm_instructions.append("main:")
         self.asm_instructions.append("    push rbp")
         self.asm_instructions.append("    mov rbp, rsp")
@@ -681,6 +682,9 @@ class ASMGenerator:
         # pop x
         self.asm_instructions.append("    sub SP, 8")
         self.asm_instructions.append("    mov rax, [SP]          ; x")
+
+        self.asm_instructions.append("    test rbx, rbx")
+        self.asm_instructions.append("    jz DIV_BY_ZERO")
         # rax = x / y
         self.asm_instructions.append("    cqo                     ; sign-extend rax to rdx:rax")
         self.asm_instructions.append("    idiv rbx                ; rax = x / y")
@@ -698,8 +702,8 @@ class ASMGenerator:
         self.asm_instructions.append("    mov rax, [SP]          ; x (int)")
 
         # optional: division by zero check TODO
-        # self.asm_instructions.append("    test rbx, rbx")
-        # self.asm_instructions.append("    jz DIV_BY_ZERO")
+        self.asm_instructions.append("    test rbx, rbx")
+        self.asm_instructions.append("    jz DIV_BY_ZERO")
         # convert x to fixed-point
         self.asm_instructions.append("    cqo                     ; sign-extend rax to rdx:rax")
         self.asm_instructions.append("    shld rdx, rax, 32       ; x_fixed = x * 65536")
@@ -719,8 +723,8 @@ class ASMGenerator:
         self.asm_instructions.append("    mov rax, [SP]          ; x (float_fixed)")
 
         # optional: division by zero check TODO
-        # self.asm_instructions.append("    test rbx, rbx")
-        # self.asm_instructions.append("    jz DIV_BY_ZERO")
+        self.asm_instructions.append("    test rbx, rbx")
+        self.asm_instructions.append("    jz DIV_BY_ZERO")
 
         # convert x to higher precision fixed-point
         self.asm_instructions.append("    cqo                     ; sign-extend rax to rdx:rax")
@@ -731,6 +735,18 @@ class ASMGenerator:
         self.asm_instructions.append("    idiv rbx                 ; rax = x_high / y")
         # push result
         self.push_rax()
+
+    def write_div_by_zero_label(self):
+        self.asm_instructions.append("DIV_BY_ZERO:")
+        self.asm_instructions.append('    lea rdi, [rel div_by_zero_msg]')
+        self.asm_instructions.append("    xor eax, eax")
+        self.asm_instructions.append("    call printf")
+        self.asm_instructions.append("    mov eax, 1")
+        self.asm_instructions.append("    leave")
+        self.asm_instructions.append("    ret")
+        self.write_ln()
+        self.asm_instructions.append('div_by_zero_msg db "Error: Division by zero", 10, 0')
+        self.write_ln()
 
 
 

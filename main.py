@@ -357,12 +357,23 @@ code_test_recursion = """class Test :
 end
 """
 
+code_devide_by_zero = """class Test :
+    fn main() -> void:
+        create int a = 10;
+        create int b = 0;
+        create int c;
+        set c to a / b;
+        print(c);
+    end
+end
+"""
 
 
 
 
 
-fin_code = code_multi_return
+
+fin_code = code_devide_by_zero
 
 class Compiler:
     def __init__(self, path):
