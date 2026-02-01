@@ -133,6 +133,8 @@ class SymbolAnalyzer:
             args_slot += 1
 
     def analysed_method_body(self, body):
+        print("Analysing method body...")
+        print(body)
         var_slots = 0
         for statement in body:
             if statement.type == "CREATE_STMT":
@@ -164,6 +166,25 @@ class SymbolAnalyzer:
                         slot=var_slots
                     )
                     var_slots += 1
+            elif statement.type == "IF_STMT":
+                body = statement.value
+                #print("IF_ELSE_BODY with length:", len(body.value))
+                if body.type == "IF_ELSE_STMT":
+                    assert len(body.value) == 3
+                    if_body = body.value[1]
+                    else_body = body.value[2]
+                    #print("if  body   ", if_body)
+                    #print("else body   ", else_body)
+                    self.analysed_method_body(if_body)
+                    self.analysed_method_body(else_body)
+                elif body.type == "IF_STMT":
+                    assert len(body.value) == 2
+                    if_body = body.value[1]
+                    #print(if_body)
+                    self.analysed_method_body(if_body)
+
+
+
 
     def analyze_function(self, FN_body):
         name = FN_body[0].value

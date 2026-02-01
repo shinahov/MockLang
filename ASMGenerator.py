@@ -387,7 +387,6 @@ class ASMGenerator:
         self.asm_instructions.append("    mov rax , [SP]  ; pop value into rax")
 
     def write_return(self, count: int):
-
         if count < 0:
             raise ValueError("count must be >= 0")
 
@@ -395,22 +394,19 @@ class ASMGenerator:
         done_label = f"RET_COPY_DONE{self.label_count}"
         self.label_count += 1
 
-        # Save frame and return address (your layout: RET at [FRAME - 32])
+        bytes_ = count * 8
+
         self.asm_instructions.append("    mov FRAME, LCL")
         self.asm_instructions.append("    mov RET, [FRAME - 32]")
+        self.asm_instructions.append(f"    lea rax, [SP - {bytes_}]")
+        self.asm_instructions.append("    mov r8, ARG")  # dest base = callee ARG (caller slot)
 
-        # Save source/destination bases before restoring registers
-        # rax = address of local segment base (source of return values)
-        # TEMP = address of argument segment base (destination in caller)
-        self.asm_instructions.append("    mov rax, LCL")
-        self.asm_instructions.append("    mov r8, ARG")
-
-        # Restore saved registers from the call frame (your layout)
+        # restore saved regs
         self.asm_instructions.append("    mov THIS, [FRAME - 8]")
         self.asm_instructions.append("    mov ARG,  [FRAME - 16]")
         self.asm_instructions.append("    mov LCL,  [FRAME - 24]")
 
-        # Copy `count` qwords: [rax + i*8] -> [TEMP + i*8]
+        # copy count qwords: src[0..count-1] -> dest[0..count-1]
         self.asm_instructions.append(f"    mov rcx, {count}")
         self.asm_instructions.append(f"{loop_label}:")
         self.asm_instructions.append("    test rcx, rcx")
@@ -419,13 +415,10 @@ class ASMGenerator:
         self.asm_instructions.append("    mov rbx, [rax + rcx*8]")
         self.asm_instructions.append("    mov [r8 + rcx*8], rbx")
         self.asm_instructions.append(f"    jmp {loop_label}")
-
         self.asm_instructions.append(f"{done_label}:")
 
-        # Set SP for caller: SP = (old ARG base) + count*8
-        self.asm_instructions.append(f"    lea SP, [r8 + {count * 8}]")
-
-        # Jump back
+        # SP = oldARG + bytes_
+        self.asm_instructions.append(f"    lea SP, [r8 + {bytes_}]")
         self.asm_instructions.append("    jmp RET")
         self.write_ln()
 

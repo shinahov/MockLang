@@ -98,6 +98,7 @@ class VMGenerator:
             self.generate_expression(expr)
             self.pop_symbol(symbol)
         if len(crate_stmt) == 2:
+            print("create statement with 2 tokens", crate_stmt)
             var_type = crate_stmt[0].value
             var_name = crate_stmt[1].value
             symbol = self.parse_symbol(var_name)
@@ -129,8 +130,8 @@ class VMGenerator:
 
     def parse_symbol(self, var_name):
         symbol = self.symbol_table_manager.table.lookup(var_name)
-        print("the symbol: ",symbol)
-        #print(self.symbol_table_manager.table)
+        self.symbol_table_manager.dump()
+        print("the symbol: ", symbol)
         if symbol is None:
             raise Exception(f"Undefined variable '{var_name}'")
         segment = None
@@ -229,7 +230,17 @@ class VMGenerator:
             self.generate_method_call(parts)
 
 
-        #print("complex expression", expr)
+        elif len(parts) == 2:
+            #print("complex expression", len(parts), parts)
+            if parts[0].type == "SELF" or parts[0].type == "IDENT":
+                if parts[1].type == "TERM":
+                    self.generate_expression(parts[1].value)
+                    self.instructions.append(f"call {self.class_name}.{parts[0].value} 1")
+                    return
+
+
+
+        print("complex expression", len(parts), parts)
         raise Exception("Complex expressions are not supported yet expr: " + repr(expr))
 
     def parse_operator(self, operator, left_type, right_type):
@@ -392,6 +403,7 @@ class VMGenerator:
         self.instructions.append(f"call print.{type} 1")
 
     def generate_return_statement(self, return_stmt):
+
         count = len(return_stmt)
         #print("return statement with", count, "expressions in ", return_stmt)
         for expr in return_stmt:
@@ -414,6 +426,9 @@ class VMGenerator:
                 elif expr[0].type == "IDENT":
                     slot = self.symbol_table_manager.lookup(expr[1].value)
                     self.push_symbol(f"local {slot.slot}")
+            elif len(expr) > 2:
+                self.generate_expression(Tokenizer.Token("EXPR", expr))
+
 
         self.instructions.append(f"return {count}")
 
@@ -455,6 +470,7 @@ class VMGenerator:
         if else_token is not None:
             self.instructions.append("goto IF_END" + str(label_id))
             self.instructions.append("label IF_FALSE" + str(label_id))
+            print("else token to generate: ", else_token)
             self.generate_statmen(else_token)
             self.instructions.append("label IF_END" + str(label_id))
         else:
@@ -502,7 +518,7 @@ class VMGenerator:
 
     def generate_statmen(self, if_token):
         for statement in if_token:
-            #print("statment ", statement)
+            print("statment ", statement)
             if statement.type == "SET_STMT":
                 set_stmt = statement.value
                 self.generate_set_statement(set_stmt, "")

@@ -320,6 +320,7 @@ class Parser:
         self.pop()
         exprs = []
         cur = []
+        #Todo: support more complex expressions
 
         while self.token.type != "SEMI":
             if self.token.type == "COMMA":
@@ -328,7 +329,7 @@ class Parser:
                 exprs.append(cur)
                 cur = []
                 self.pop()  # skipp ','
-                continue
+                #res = self.parse_expression_in_return(exprs)
 
             if self.token.type == "IDENT" or self.token.type == "SELF":
                 token = self.token
@@ -352,6 +353,10 @@ class Parser:
                                              Token("ARGS", args)])])
                     else:
                         chain.extend([Token("CLASS", token.value), name])
+                elif self.token.type in Tokenizer.operators:
+                    chain.append(token)
+                    chain.append(Token("OPERATOR", self.token.value))
+                    self.pop()
                 elif self.token.type == "LP":
                     self.pop()  # skipp '('
                     args = self.parse_args()
@@ -371,6 +376,7 @@ class Parser:
         if cur:
             exprs.append(cur)
         self.pop()  # ';' consumed
+        #print("RETURN_STMT parsed expressions:", exprs)
         return exprs
 
     def parse_return_type(self):

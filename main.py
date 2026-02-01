@@ -338,12 +338,31 @@ code_test_all = """class Test :
 end
 """
 
+code_test_recursion = """class Test :
+    fn factorial(n:int) -> int:
+        if(n =? 0){
+            return 1;
+        } else {
+            create int t;
+            set t to factorial(n - 1);
+            return n * t;
+        }
+    end
+    fn main() -> void:
+        create int num = 4;
+        create int result;
+        set result to factorial(num);
+        print(result);
+    end
+end
+"""
 
 
 
 
 
-fin_code = code_test_all
+
+fin_code = code_multi_return
 
 class Compiler:
     def __init__(self, path):
@@ -372,7 +391,7 @@ def let_test():
     analyzer.analyze()
     #print("Final Symbol Table:")
 
-    #print(table.dump())  # nur scopes + symbols
+    print(table.dump())  # nur scopes + symbols
     #print(table.dump(show_node=True))  # zusätzlich node-typen
 
     vm_generator = VM.VMGenerator(table, programm)
