@@ -1,4 +1,6 @@
 import os, sys, re
+import subprocess
+from pathlib import Path
 import Tokenizer
 import Parser
 import SymbolAnalyzer as SA
@@ -390,6 +392,17 @@ class Compiler:
         # Compilation logic goes here
 
 
+def build_executable(asm_file_path: str, output_path: str):
+    asm_path = str(Path(asm_file_path))
+    obj_path = str(Path(asm_path).with_suffix(".o"))
+    exe_path = str(Path(output_path))
+
+    subprocess.run(["nasm", "-f", "elf64", asm_path, "-o", obj_path], check=True)
+
+    subprocess.run(["gcc", "-no-pie", obj_path, "-o", exe_path], check=True)
+
+    print("Executable built at:", exe_path)
+
 def let_test():
     tokens = Tokenizer.Tokenizer().tokenize(fin_code)
     #print("Tokens:", tokens)
@@ -415,11 +428,14 @@ def let_test():
 
     asm_generator = ASM.ASMGenerator(instructions)
     asm_instructions = asm_generator.generate()
-    print("Generated ASM Instructions:")
-    for instr in asm_instructions:
-        print(instr)
-    with open(r"C:\Users\ibrahim shinahov\Desktop\vmstack_add.asm", "w") as f:
+    asm_out = "/mnt/c/Users/ibrahim shinahov/Desktop/vmstack_add.asm"
+    exe_out = "/mnt/c/Users/ibrahim shinahov/Desktop/vmstack_add"
+
+    with open(asm_out, "w", encoding="utf-8") as f:
         f.write("\n".join(asm_instructions))
+
+    build_executable(asm_out, exe_out)
+
 
 
 if __name__ == "__main__":
