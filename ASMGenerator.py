@@ -36,7 +36,6 @@ class ASMGenerator:
         self.create_alias()
         self.write_ln()
         self.asm_instructions.append("global main")
-        # Mem alloc stubben
         self.asm_instructions.append("global Memory_alloc")
         self.asm_instructions.append("extern printf")
         self.write_ln()
@@ -203,7 +202,6 @@ class ASMGenerator:
 
             elif cmd == "return":
                 count = int(parts[1])
-                #print(f"Return with count {count} not implemented yet.")
                 self.write_return(count)
 
             elif cmd == "function":
@@ -248,24 +246,19 @@ class ASMGenerator:
             self.asm_instructions.append("vm_start:")
         else:
             class_name, func_name = func_name.split(".")
-            print(func_name)
             self.asm_instructions.append(f"{class_name}_{func_name}:")
         self.create_stack_frame(nlocals)
 
     def push(self, parts):
-        #if len(parts) != 3:
-            #raise ValueError(f"Invalid push instruction: {' '.join(parts)}")
 
         segment = parts[1]
         index = parts[2]
-        #print(segment, index)
 
         if segment == "constant":
             # if float do * 65536
             if '.' in index:
                 float_value = float(index)
                 int_value = int(float_value * 65536)
-                #print(f"Converting float {float_value} to int {int_value} for push constant")
                 self.push_constant(int_value)
             else:
                 self.push_constant(index)
@@ -450,7 +443,6 @@ class ASMGenerator:
         self.asm_instructions.append("%define THIS  r15")
         self.asm_instructions.append("%define FRAME r10")
         self.asm_instructions.append("%define RET   r11")
-        #self.asm_instructions.append("%define TEMP  r9")
         self.write_ln()
 
     def call_function(self, func_name, nargs):
@@ -646,9 +638,7 @@ class ASMGenerator:
 
         self.asm_instructions.append("    lea rdi, [fmt_float]")
         self.asm_instructions.append("    mov eax, 1")
-        #self.asm_instructions.append("    sub rsp, 8                 ; align stack for printf")
         self.asm_instructions.append("    call printf")
-        #self.asm_instructions.append("    add rsp, 8")
 
     def write_math_multiply_inline(self):
         # pop y
@@ -693,8 +683,6 @@ class ASMGenerator:
 
     def write_math_divide_inline_int_float(self):
         # pop y (float_fixed)
-        print("DIVIDE INT FLOAT")
-         # pop y
         self.asm_instructions.append("    sub SP, 8")
         self.asm_instructions.append("    mov rbx, [SP]          ; y (float_fixed)")
         # pop x (int)

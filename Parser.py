@@ -50,7 +50,6 @@ class Parser:
     def pop(self):
         self.token = self.tokens[self.pos]
         self.pos += 1
-        # return token
 
     def parse(self):
         self.pop()
@@ -68,9 +67,7 @@ class Parser:
             self.programm.append(Token("FIELDS", self.parse_fields()))
             self.pop()
             token = self.token
-            # assert token.type == "COLON"
             self.programm.append(Token("BODY", self.parse_body()))
-        # assert token.type == "END"
         return self.programm
 
     def parse_body(self):
@@ -102,7 +99,6 @@ class Parser:
             self.pop()
             if self.token.type == "RBRK":
                 break
-            print("Parsing field, current token:", self.token)
             assert self.token.type == "IDENT"
             field_name = self.token.value
             self.pop()
@@ -197,11 +193,9 @@ class Parser:
                         self.pop() # consume COMMA
                     if self.token.type == "TO":
                         self.pop() # consume TO
-                        print()
                         buffer = [Token("MULTI_IDENT_SET", buffer),
                                   Token("TO", self.parse_ident())]
 
-        #print("SET_STMT parsed:", buffer)
         return buffer
 
 
@@ -269,7 +263,6 @@ class Parser:
                 return_type = self.parse_return_type()
                 assert self.token.type == "COLON"
                 self.pop() # consume :
-                #print("first token in method body:", self.token)
                 body = self.parse_method_body()
                 return (Token("METHOD_DEF",
                               [Token("NAME", name),
@@ -329,15 +322,13 @@ class Parser:
                 exprs.append(cur)
                 cur = []
                 self.pop()  # skipp ','
-                #res = self.parse_expression_in_return(exprs)
+
 
             if self.token.type == "IDENT" or self.token.type == "SELF":
                 token = self.token
                 chain = []
                 self.pop() # skipp self or ident
                 if self.token.type == "DOT":
-                    #print("HERE in return stmt parsing CLASS_METHOD_CALL with DOT :", token )
-                    #dot = self.token
                     self.pop() # skipp '.'
                     if self.token.type != "IDENT":
                         raise SyntaxError("Nach '.' wird IDENT erwartet")
@@ -376,7 +367,6 @@ class Parser:
         if cur:
             exprs.append(cur)
         self.pop()  # ';' consumed
-        #print("RETURN_STMT parsed expressions:", exprs)
         return exprs
 
     def parse_return_type(self):

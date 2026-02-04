@@ -47,23 +47,19 @@ class VMGenerator:
                 pass
             else:
                 raise Exception(f"Unsupported statement type '{statement.type}' in class body")
-            #return None
 
     def generate_method(self, methode):
         name = methode[0].value
         local_count = self.symbol_table_manager.count_vars(name)
         self.instructions.append(f"function {self.class_name}.{name} {local_count}")
-        #push self pointer
         self.push_symbol("argument 0")
         self.pop_symbol("pointer 0")
-        #print(self.instructions)
         assert methode[3].type == "BODY"
         body = methode[3]
         assert methode[1].type == "ARGS"
         assert methode[2].type == "RETURN_TYPE"
         return_types = methode[2].value
         self.generate_method_body(body, name)
-        #print("return types", return_types)
         if len(return_types) == 1 and return_types[0].type == "TYPE_VOID":
             self.instructions.append("push constant 0")
             self.instructions.append("return 0")
@@ -81,7 +77,6 @@ class VMGenerator:
         assert body[2].type == "RETURN_TYPE"
         return_types = body[2].value
         self.generate_method_body(fn_body, name)
-        #print("return types", return_types)
         if len(return_types) == 1 and return_types[0].type == "TYPE_VOID":
             self.instructions.append("push constant 0")
             self.instructions.append("return 0")
@@ -93,12 +88,10 @@ class VMGenerator:
             var_name = crate_stmt[1].value
             symbol = self.parse_symbol(var_name)
             assert crate_stmt[2].type == "EQ"
-            #print("var type  ", var_type)
             expr = crate_stmt[3]
             self.generate_expression(expr)
             self.pop_symbol(symbol)
         if len(crate_stmt) == 2:
-            print("create statement with 2 tokens", crate_stmt)
             var_type = crate_stmt[0].value
             var_name = crate_stmt[1].value
             symbol = self.parse_symbol(var_name)
@@ -112,7 +105,6 @@ class VMGenerator:
                 raise Exception(f"Unsupported variable type '{var_type}' in create statement")
             self.pop_symbol(symbol)
         if len(crate_stmt)== 5:
-            # is a class instance so constructor call
             var_type = crate_stmt[0].value
             var_name = crate_stmt[1].value
             symbol = self.parse_symbol(var_name)
@@ -131,7 +123,6 @@ class VMGenerator:
     def parse_symbol(self, var_name):
         symbol = self.symbol_table_manager.table.lookup(var_name)
         self.symbol_table_manager.dump()
-        print("the symbol: ", symbol)
         if symbol is None:
             raise Exception(f"Undefined variable '{var_name}'")
         segment = None
@@ -146,8 +137,6 @@ class VMGenerator:
         return f"{segment} {symbol.slot}"
 
     def generate_expression(self, expr):
-        print("generating expression", expr)
-
         if isinstance(expr, Tokenizer.Token) and expr.type == "TERM":
             return self.generate_expression(expr.value)
         elif expr.type == "CLASS_METHOD_CALL":
@@ -158,7 +147,6 @@ class VMGenerator:
             return self.generate_function_call(fn_call)
 
         elif not (isinstance(expr, Tokenizer.Token) and expr.type == "EXPR"):
-            #print("expr type:", expr.type)
             return self.write_value(expr)
 
 
@@ -169,16 +157,13 @@ class VMGenerator:
                 return self.generate_expression(single)
             else:
                 return self.write_value(single)
-        #print("expression parts!!!!!!!!!:    ", parts)
         if len(parts) == 3:
             left, middle, right = parts
-            print("complex expression parts:", left, middle, right)
 
             if middle.type == "OPERATOR":
                 operator = middle.value
                 left_type = self.generate_expression(left)
                 right_type = self.generate_expression(right)
-                print("left type:", left_type, "right type:", right_type)
                 self.parse_operator(operator, left_type, right_type)
 
             # COMPARATOR: =? < > ...
@@ -231,7 +216,6 @@ class VMGenerator:
 
 
         elif len(parts) == 2:
-            #print("complex expression", len(parts), parts)
             if parts[0].type == "SELF" or parts[0].type == "IDENT":
                 if parts[1].type == "TERM":
                     self.generate_expression(parts[1].value)
@@ -240,7 +224,6 @@ class VMGenerator:
 
 
 
-        print("complex expression", len(parts), parts)
         raise Exception("Complex expressions are not supported yet expr: " + repr(expr))
 
     def parse_operator(self, operator, left_type, right_type):
@@ -314,7 +297,6 @@ class VMGenerator:
     def generate_method_body(self, body, method_name):
         self.symbol_table_manager.enter_scope_for_lookup(method_name)
         for statement in body.value:
-            #print(statement)
             if statement.type == "SET_STMT":
                 set_stmt = statement.value
                 self.generate_set_statement(set_stmt, method_name)
@@ -328,7 +310,6 @@ class VMGenerator:
                 crate_stmt = statement.value
                 self.generate_create_statement(crate_stmt)
             elif statement.type == "IF_STMT":
-                #print(statement)
                 if_stmt = statement.value
                 self.generate_if_statement(if_stmt)
             elif statement.type == "FN_CALL":
@@ -356,9 +337,7 @@ class VMGenerator:
 
 
     def generate_set_statement(self, set_stmt, method_name):
-        #print("set statement:")
         Parser.pretty_print(set_stmt)
-        #print("len of set statement", len(set_stmt))
         if len(set_stmt) == 3:
             calss_var = set_stmt[0]
             var = set_stmt[1]
@@ -366,7 +345,6 @@ class VMGenerator:
             expr = set_stmt[2].value
             self.generate_expression(expr)
             if calss_var.type == "IDENT":
-                #print("set statment with 3 ", set_stmt)
                 pass # TODO: implement normal set
 
 
@@ -376,7 +354,6 @@ class VMGenerator:
                     self.symbol_table_manager.exit_scope()
                     slot = self.symbol_table_manager.lookup(var.value)
                 self.symbol_table_manager.enter_scope_for_lookup(method_name)
-                #print(self.symbol_table_manager.table.symbols)
                 self.pop_symbol(f"this {slot.slot}")
 
         elif len(set_stmt) == 2:
@@ -392,8 +369,6 @@ class VMGenerator:
                     raise Exception(f"Undefined variable '{var.value}'")
                 self.pop_slot(slot)
 
-            #self.pop_symbol(f"local {slot.slot}")
-
 
 
     def generate_print_statement(self, print_stmt):
@@ -405,9 +380,7 @@ class VMGenerator:
     def generate_return_statement(self, return_stmt):
 
         count = len(return_stmt)
-        #print("return statement with", count, "expressions in ", return_stmt)
         for expr in return_stmt:
-            #print("expressions in return", expr)
             if len(expr) == 1:
                 self.write_value(expr[0])
             elif len(expr) == 2:
@@ -440,11 +413,9 @@ class VMGenerator:
         label_id = self.get_new_label_id()
         Parser.pretty_print(if_stmt)
         if_token = if_stmt.value[1]
-        #print("if token", if_token)
         else_token = None
         if if_stmt.type == "IF_ELSE_STMT":
             else_token = if_stmt.value[2]
-            #print("else token", else_token)
         assert if_stmt.value[0].type == "EXPR"
         condition = if_stmt.value[0]
         tokens = condition.value
@@ -470,7 +441,6 @@ class VMGenerator:
         if else_token is not None:
             self.instructions.append("goto IF_END" + str(label_id))
             self.instructions.append("label IF_FALSE" + str(label_id))
-            print("else token to generate: ", else_token)
             self.generate_statmen(else_token)
             self.instructions.append("label IF_END" + str(label_id))
         else:
@@ -514,11 +484,9 @@ class VMGenerator:
 
     def return_statment(self, expr):
         pass
-        #print(expr)
 
     def generate_statmen(self, if_token):
         for statement in if_token:
-            print("statment ", statement)
             if statement.type == "SET_STMT":
                 set_stmt = statement.value
                 self.generate_set_statement(set_stmt, "")
@@ -538,7 +506,6 @@ class VMGenerator:
             elif statement.type == "IF_STMT":
                 if_stmt = statement.value
                 self.generate_if_statement(if_stmt)
-        #self.instructions.append("label IF_FALSE" + str(self.goto_count))
 
 
     def infer_type(self, expr):
@@ -582,7 +549,6 @@ class VMGenerator:
 
     def generate_loop_statement(self, loop_var, start_expr, end_expr, body_stmt, method_name):
         index = self.symbol_table_manager.lookup(loop_var).slot
-        #print("loop body stmt: ", body_stmt)
 
         loop_id = self.get_new_label_id()
         self.generate_expression(start_expr)
@@ -615,10 +581,8 @@ class VMGenerator:
         self.pop_symbol(f"{segment} {slot.slot}")
 
     def generate_method_call(self, class_call):
-        #print("class call:", class_call)
         class_instance = (self.symbol_table_manager.lookup(class_call[0].value)).data_type
         args = class_call[2].value
-        #print("!!!!!!!!!!!!!!!! ", self.symbol_table_manager.lookup(class_call[0].value))
         self.push_symbol(self.parse_symbol(class_call[0].value))
         self.push_arguments(args)
         self.instructions.append(f"call {class_instance}.{class_call[1].value} "
