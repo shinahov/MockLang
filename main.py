@@ -370,12 +370,43 @@ code_devide_by_zero = """class Test :
 end
 """
 
+code = """ class Test :
+
+  fn main() -> void:
+
+    print("=== Counter Demo ===");
+
+    create int sum = 0;
+
+    loop(i, (0; 5;)){
+      print("i:");
+      print(i);
+
+      set sum to sum + i;
+
+      if(i =? 3){
+        print("Reached 3");
+      }
+
+      set i to (i + 1);
+    }
+
+    print("Sum:");
+    print(sum);
+
+  end
+
+end
+
+
+"""
 
 
 
 
 
-fin_code = code_devide_by_zero
+
+fin_code = code
 
 class Compiler:
     def __init__(self, path):

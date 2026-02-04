@@ -535,6 +535,9 @@ class VMGenerator:
                 fn_call = statement.value
                 self.generate_function_call(fn_call)
                 self.pop_symbol("temp 0")
+            elif statement.type == "IF_STMT":
+                if_stmt = statement.value
+                self.generate_if_statement(if_stmt)
         #self.instructions.append("label IF_FALSE" + str(self.goto_count))
 
 
@@ -579,6 +582,7 @@ class VMGenerator:
 
     def generate_loop_statement(self, loop_var, start_expr, end_expr, body_stmt, method_name):
         index = self.symbol_table_manager.lookup(loop_var).slot
+        #print("loop body stmt: ", body_stmt)
 
         loop_id = self.get_new_label_id()
         self.generate_expression(start_expr)
